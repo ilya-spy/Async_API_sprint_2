@@ -1,0 +1,7 @@
+flake8==4.0.1
+flake8-bandit==2.1.2
+bandit==1.7.2
+psycopg2-binary==2.9.3
+redis==4.2.2
+pydantic==1.9.0
+elasticsearch==8.2.0
