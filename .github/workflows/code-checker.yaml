@@ -15,7 +15,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8==4.0.1 flake8-bandit==2.1.2 bandit==1.7.2
       - name: Flake8
-        run: flake8 src/ tests/
+        run: flake8 api/src/ api/tests/ indexer/
 #  tests:
 #    name: Тесты
 #    runs-on: ubuntu-latest
