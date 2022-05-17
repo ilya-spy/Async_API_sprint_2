@@ -16,10 +16,16 @@ class Person(BaseModel):
     full_name: str
 
 
+class Genre(BaseModel):
+    id: UUID
+    name: str
+
+
 class Movie(BaseModel):
     id: UUID
+    type: str
     title: str
     description: str
     rating: float
-    genres: list[str]
+    genres: list[Genre]
     persons: list[Person]

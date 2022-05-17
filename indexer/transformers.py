@@ -1,9 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
+from pydantic import BaseModel
+
 import documents
 import models
-from pydantic import BaseModel
 
 
 @dataclass
@@ -39,28 +40,15 @@ class ElasticSearchMovie(Base):
         """
         return documents.Movie(
             id=item.id,
-            genre=item.genres,
+            type=item.type,
             imdb_rating=item.rating,
             title=item.title,
             description=item.description,
-            director=self.get_person_names(item.persons, models.RoleEnum.director),
-            actors_names=self.get_person_names(item.persons, models.RoleEnum.actor),
-            writers_names=self.get_person_names(item.persons, models.RoleEnum.writer),
+            genre=[documents.Genre(**genre.dict()) for genre in item.genres],
+            directors=self.get_person(item.persons, models.RoleEnum.director),
             actors=self.get_person(item.persons, models.RoleEnum.actor),
             writers=self.get_person(item.persons, models.RoleEnum.writer),
         )
-
-    @staticmethod
-    def get_person_names(persons: list[models.Person], role: models.RoleEnum) -> list[str]:
-        """Фильтруем персон по роли и возвращает список их имен.
-
-        :param persons:
-        :param role:
-        :return:
-        """
-        return [person.full_name
-                for person in persons
-                if person.role == role]
 
     @staticmethod
     def get_person(persons: list[models.Person], role: models.RoleEnum) -> list[documents.Person]:
@@ -70,6 +58,6 @@ class ElasticSearchMovie(Base):
         :param role:
         :return:
         """
-        return [documents.Person(id=person.id, name=person.full_name)
+        return [documents.Person(id=person.id, full_name=person.full_name)
                 for person in persons
                 if person.role == role]

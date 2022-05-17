@@ -32,6 +32,7 @@ class Movie(Base):
             sql = '''
                 SELECT
                     fw.id,
+                    fw.type,
                     fw.title,
                     fw.description,
                     fw.rating,
@@ -45,7 +46,15 @@ class Movie(Base):
                        ) FILTER (WHERE p.id is not null),
                        '[]'
                     ) as persons,
-                    array_agg(DISTINCT g.name) as genres
+                    COALESCE (
+                        json_agg(
+                           DISTINCT jsonb_build_object(
+                               'id', g.id,
+                               'name', g.name 
+                           )
+                       ) FILTER (WHERE p.id is not null),
+                       '[]'
+                    ) as genres
                 FROM content.film_work fw
                 LEFT JOIN content.genre_film_work gfw ON fw.id = gfw.film_work_id
                 LEFT JOIN genre g on g.id = gfw.genre_id

@@ -28,13 +28,12 @@ REDIS_DSN = dict(
 )
 
 # ключ, по которому будет храниться состояние в хранилище
-STORAGE_STATE_KEY = 'etl'
+STORAGE_STATE_KEY = 'indexer'
 
 ES_SCHEMA = os.environ.get('ES_SCHEMA', 'https')
 ES_HOST = os.environ.get('ES_HOST', '127.0.0.1')
 ES_PORT = int(os.environ.get('ES_PORT', 9200))
 ES_MAX_RETRIES = int(os.environ.get('ES_MAX_RETRIES', 3))
 ES_MOVIE_INDEX_NAME = 'movies'
-ES_SCHEMAS_PATH = '../elastic/schemas/*.json'
 
 LOGGING_LEVEL = logging.DEBUG
