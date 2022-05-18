@@ -45,11 +45,11 @@
       "id": {
         "type": "keyword"
       },
+      "type": {
+        "type": "keyword"
+      },
       "imdb_rating": {
         "type": "float"
-      },
-      "genre": {
-        "type": "keyword"
       },
       "title": {
         "type": "text",
@@ -64,17 +64,31 @@
         "type": "text",
         "analyzer": "ru_en"
       },
-      "director": {
-        "type": "text",
-        "analyzer": "ru_en"
+      "genre": {
+        "type": "nested",
+        "dynamic": "strict",
+        "properties": {
+          "id": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "keyword",
+            "analyzer": "ru_en"
+          }
+        }
       },
-      "actors_names": {
-        "type": "text",
-        "analyzer": "ru_en"
-      },
-      "writers_names": {
-        "type": "text",
-        "analyzer": "ru_en"
+      "directors": {
+        "type": "nested",
+        "dynamic": "strict",
+        "properties": {
+          "id": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "text",
+            "analyzer": "ru_en"
+          }
+        }
       },
       "actors": {
         "type": "nested",

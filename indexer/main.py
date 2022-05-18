@@ -2,15 +2,16 @@ import signal
 import time
 from dataclasses import dataclass
 
+import redis
+from elasticsearch import Elasticsearch
+
 import enrichers
 import loaders
 import producers
-import redis
 import settings
 import states
 import transformers
 from db import DB
-from elasticsearch import Elasticsearch
 from log import logger
 from pipelines import Pipeline
 

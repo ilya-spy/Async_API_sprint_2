@@ -2,9 +2,10 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Generator
 
-import documents
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
+
+import documents
 from utils import backoff
 
 
