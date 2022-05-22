@@ -7,7 +7,7 @@ from models import helpers
 
 class Genre(BaseModel):
     """Модель жанра."""
-    id: UUID
+    uuid: UUID
     name: str
 
     class Config:

@@ -7,13 +7,13 @@ from models import helpers
 
 
 class PersonFilm(BaseModel):
-    id: UUID
+    film_id: UUID
     role: str
 
 
 class Person(BaseModel):
     """Модель персоны."""
-    id: UUID
+    uuid: UUID
     full_name: str
     films: Optional[List[PersonFilm]]
 
