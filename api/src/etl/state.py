@@ -80,15 +80,14 @@ class State:
     storage: BaseStorage
     _state: dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
-        self._state = await self.storage.retrieve_state()
-
     async def retrieve_state(self, key: str) -> Any:
         """Возвращает сохраненное состояние по ключу.
 
         :param key:
         :return:
         """
+        if not self._state:
+            self._state = await self.storage.retrieve_state()
         return self._state.get(key)
 
     async def save_state(self, key: str, value: Any):

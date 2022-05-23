@@ -1,11 +1,11 @@
 import asyncio
+import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
 from db import postgres
-from etl import models, state
-from etl.utils import backoff
+from etl import entities, state
+from etl.helpers import get_last_modified
 
 
 @dataclass
@@ -16,8 +16,8 @@ class BaseProducer(metaclass=ABCMeta):
     check_interval: float
     chunk_size: int
     state: state.State
+    logger: logging.Logger
 
-    @backoff()
     async def produce(self, queue: asyncio.Queue) -> None:
         """ В бесконечном цикле выполняет запросы к бд и отправляет найденные измененные записи в очередь.
         Запросы выполняются каждые check_interval секунд.
@@ -25,13 +25,13 @@ class BaseProducer(metaclass=ABCMeta):
         :param queue:
         :rtype: None
         """
-        conn = self.db.get_connection()
+        conn = await self.db.get_connection()
         try:
-            last_modified = await self.last_modified()
+            last_modified = await get_last_modified(self.state, self.__class__.__name__)
             while True:
                 async with conn.transaction():
                     async for row in conn.cursor(self.sql(), last_modified, prefetch=self.chunk_size):
-                        await queue.put(models.Message(
+                        await queue.put(entities.Message(
                             producer_name=self.__class__.__name__,
                             obj_id=row['id'],
                             obj_modified=row['modified'],
@@ -40,16 +40,6 @@ class BaseProducer(metaclass=ABCMeta):
                 await asyncio.sleep(self.check_interval)
         finally:
             await conn.close()
-
-    async def last_modified(self) -> datetime:
-        """Возвращает дату последнего изменения из хранилища состояний.
-
-        Если не найдена, то вернет 0001-01-01 00:00:00.
-
-        :return:
-        """
-        modified = await self.state.retrieve_state(self.__class__.__name__)
-        return datetime.fromisoformat(modified) if modified else datetime.min.replace(tzinfo=timezone.utc)
 
     @abstractmethod
     def sql(self) -> str:
@@ -69,7 +59,7 @@ class PersonModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT pfw.film_work_id, p.modified FROM content.person p 
+            SELECT pfw.film_work_id as id, p.modified FROM content.person p 
             INNER JOIN content.person_film_work pfw ON pfw.person_id = p.id
             WHERE p.modified > $1 
             ORDER BY p.modified DESC
@@ -85,7 +75,7 @@ class GenreModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT gfw.film_work_id, g.modified FROM content.genre g 
+            SELECT gfw.film_work_id as id, g.modified FROM content.genre g 
             INNER JOIN content.genre_film_work gfw ON gfw.genre_id = g.id
             WHERE g.modified > $1
             ORDER BY g.modified DESC

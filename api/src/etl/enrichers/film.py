@@ -1,23 +1,23 @@
 from dataclasses import dataclass
-from typing import Generator
 
 from asyncpg.connection import Connection
+from pydantic import BaseModel
 
-from etl.models import Message
+from etl.entities import Film, Message
 
 from .base import BaseEnricher
 
 
 @dataclass
-class Film(BaseEnricher):
+class FilmEnricher(BaseEnricher):
     """Получает из бд полные данные по фильму."""
 
-    async def fill_model(self, conn: Connection, messages: list[Message]) -> Generator[Message, None, None]:
-        """Возвращает сообщение с найденной моделью фильма.
+    async def retrieve_models(self, conn: Connection, messages: list[Message]) -> dict[str, BaseModel]:
+        """Получает из бд фильмы и сохраняет в сообщение.
 
         :param conn:
         :param messages:
-        :rtype: Generator[Message, None, None]
+        :rtype: dict[str, BaseModel]
         """
         sql = '''
             SELECT
@@ -50,10 +50,13 @@ class Film(BaseEnricher):
             LEFT JOIN genre g on g.id = gfw.genre_id
             LEFT JOIN person_film_work pfw on fw.id = pfw.film_work_id
             LEFT JOIN person p on p.id = pfw.person_id
-            WHERE fw.id = ANY(%s)
+            WHERE fw.id = ANY($1)
             GROUP BY fw.id
         '''
-        ids = [message.obj_id for message in messages]
+
+        ids = [m.obj_id for m in messages]
+        film_map = dict()
         async with conn.transaction():
             async for row in conn.cursor(sql, ids, prefetch=self.chunk_size):
-                yield Film(**row)
+                film_map[row['id']] = Film(**row)
+        return film_map

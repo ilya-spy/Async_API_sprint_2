@@ -1,2 +1,2 @@
 from .base import BaseEnricher
-from .film import Film
+from .film import FilmEnricher

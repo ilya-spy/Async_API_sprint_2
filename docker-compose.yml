@@ -39,22 +39,23 @@ services:
 
   indexer:
     build:
-      context: indexer
+      context: api
+    depends_on:
+      - postgres
+      - elastic
+      - redis
     environment:
+      - REDIS_HOST
+      - ELASTIC_SCHEMA
+      - ELASTIC_HOST
+      - ELASTIC_PORT
       - DB_HOST
       - DB_NAME
       - DB_USER
       - DB_PASSWORD
-      - REDIS_HOST
-      - ES_SCHEMA=${ELASTIC_SCHEMA}
-      - ES_HOST=${ELASTIC_HOST}
-    depends_on:
-      - redis
-      - elastic
-      - postgres
     volumes:
-      - ./indexer:/app
-    command: make
+      - ./api:/app
+    command: make index
 
   elastic:
     build:

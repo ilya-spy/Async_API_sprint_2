@@ -1,93 +1,125 @@
 import asyncio
+import logging
 import signal
-import time
 from dataclasses import dataclass
 
-import enrichers
-import loaders
-import producers
-import redis
-import settings
-import states
-import transformers
-from elasticsearch import Elasticsearch
-from log import logger
-from pipelines import Pipeline
+import aioredis
+from elasticsearch import AsyncElasticsearch
 
-from db import DB
+from core import config
+from db import elastic, postgres, redis
+from etl import enrichers, loaders, pipeline, producers, state, transformers
 
 
 @dataclass
 class App:
     """Запускает обреботку пайплайнов.
     Обеспечивает корректное завершение при получении сигналов SIGINT и SIGTERM."""
-    pipelines: list[Pipeline]
-    check_interval_sec: int
+    pipelines_builders: list[callable]
     _stopped: bool = False
 
-    def __post_init__(self):
-        signal.signal(signal.SIGINT, self.exit_gracefully)
-        signal.signal(signal.SIGTERM, self.exit_gracefully)
+    @staticmethod
+    def startup():
+        redis.redis = aioredis.from_url(f'redis://{config.REDIS_HOST}:{config.REDIS_PORT}')
+        elastic.es = AsyncElasticsearch(
+            hosts=[f'{config.ELASTIC_SCHEME}://{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
+        postgres.postgres = postgres.DB(dsn=config.PG_DSN)
 
-    def exit_gracefully(self, *args):
-        self._stopped = True
+    @staticmethod
+    async def shutdown(sig, loop: asyncio.AbstractEventLoop):
+        """Cleanup tasks tied to the service's shutdown."""
+        logging.info(f"Received exit signal {sig.name}...")
+        logging.info("Closing database connections")
+        logging.info("Nacking outstanding messages")
+        tasks = [t for t in asyncio.all_tasks()
+                 if t is not asyncio.current_task()]
 
-    def run(self):
-        """Запускает пайплайны с инетрвалом."""
-        while not self._stopped:
-            for pipeline in self.pipelines:
-                pipeline.execute()
-            time.sleep(self.check_interval_sec)
+        for task in tasks:
+            task.cancel()
+
+        logging.info(f"Cancelling {len(tasks)} outstanding tasks")
+        await asyncio.gather(*tasks)
+        logging.info(f"Flushing metrics")
+        loop.stop()
+
+    async def run(self):
+        """Запускает пайплайны."""
+        self.startup()
+
+        loop = asyncio.get_running_loop()
+
+        signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
+        for s in signals:
+            loop.add_signal_handler(s, lambda sig: asyncio.create_task(self.shutdown(sig, loop)))
+
+        tasks = []
+        for build_pipeline in self.pipelines_builders:
+            pipe = await build_pipeline()
+            task = loop.create_task(pipe.execute())
+            tasks.append(task)
+
+        await asyncio.gather(*tasks, return_exceptions=False)
 
 
-async def indexer():
-    db = DB(dsn=settings.PG_DSN)
-    es_client = Elasticsearch(f'{settings.ES_SCHEMA}://{settings.ES_HOST}:{settings.ES_PORT}',
-                              max_retries=settings.ES_MAX_RETRIES)
-    redis_client = redis.Redis(**settings.REDIS_DSN)
+async def build_film_index_pipeline() -> pipeline.Pipeline:
+    logger = logging.getLogger().getChild('FilmIndexPipeline')
 
-    storage = states.RedisStorage(redis=redis_client, name=settings.STORAGE_STATE_KEY)
-    state = states.State(storage)
+    storage = state.RedisStorage(redis=await redis.get_redis(), name=config.ETL_STORAGE_STATE_KEY)
+    state_obj = state.State(storage)
 
-    enricher = enrichers.Movie(db)
-    transformer = transformers.ElasticSearchMovie()
-    loader = loaders.ElasticSearchMovie(client=es_client, index=settings.ES_MOVIE_INDEX_NAME)
+    enricher = enrichers.FilmEnricher(
+        db=await postgres.get_postgres(),
+        logger=logger.getChild('Enricher'),
+        max_batch_size=config.ETL_ENRICHER_MAX_BATCH_SIZE,
+        chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
+    )
+    loader = loaders.ElasticIndex(
+        elastic=await elastic.get_elastic(),
+        transformer=transformers.PgFilmToElasticSearch(),
+        index_name=config.ETL_FILM_INDEX_NAME,
+        state=state_obj,
+        logger=logger.getChild('Loader'),
+        chunk_size=config.ETL_LOADER_CHUNK_SIZE,
+    )
+    return pipeline.Pipeline(
+        producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
+        producers=[
+            producers.PersonModified(
+                db=await postgres.get_postgres(),
+                state=state_obj,
+                logger=logger.getChild('PersonModifiedProducer'),
+                chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
+                check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
+            ),
+            producers.GenreModified(
+                db=await postgres.get_postgres(),
+                state=state_obj,
+                logger=logger.getChild('GenreModifiedProducer'),
+                chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
+                check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
+            ),
+            producers.FilmworkModified(
+                db=await postgres.get_postgres(),
+                state=state_obj,
+                logger=logger.getChild('FilmworkModifiedProducer'),
+                chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
+                check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
+            ),
+        ],
+        enricher=enricher,
+        loader=loader,
+        logger=logger,
+    )
 
-    pipelines = [
-        Pipeline(
-            name='PersonModified',
-            check_interval=settings.CHECK_INTERVAL_SEC,
-            state=state,
-            producer=producers.PersonModified(db, settings.CHUNK_SIZE),
-            enricher=enricher,
-            transformer=transformer,
-            loader=loader,
-            logger=logger,
-        ),
-        Pipeline(
-            name='GenreModified',
-            check_interval=settings.CHECK_INTERVAL_SEC,
-            state=state,
-            producer=producers.GenreModified(db, settings.CHUNK_SIZE),
-            enricher=enricher,
-            transformer=transformer,
-            loader=loader,
-            logger=logger,
-        ),
-        Pipeline(
-            name='FilmworkModified',
-            check_interval=settings.CHECK_INTERVAL_SEC,
-            state=state,
-            producer=producers.FilmworkModified(db, settings.CHUNK_SIZE),
-            enricher=enricher,
-            transformer=transformer,
-            loader=loader,
-            logger=logger,
-        ),
+
+def indexer():
+    pipelines_builders = [
+        build_film_index_pipeline,
     ]
 
-    App(pipelines=pipelines, check_interval_sec=settings.CHECK_INTERVAL_SEC).run()
+    app = App(pipelines_builders=pipelines_builders)
+    asyncio.run(app.run())
 
 
 if __name__ == '__main__':
-    asyncio.run(indexer())
+    indexer()

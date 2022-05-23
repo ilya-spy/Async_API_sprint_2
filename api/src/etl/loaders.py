@@ -1,17 +1,18 @@
-import asyncio
 import logging
 from abc import ABCMeta, abstractmethod
-from asyncio import AbstractEventLoop, Queue
-from concurrent.futures import ProcessPoolExecutor
+from asyncio import Queue
+from collections import Counter
 from dataclasses import dataclass
+from operator import attrgetter
 from typing import Generator
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
+from etl.entities import Message
+from etl.helpers import get_last_modified
 from etl.state import State
 from etl.transformers import BaseTransformer
-from etl.utils import backoff
 
 
 @dataclass
@@ -19,11 +20,9 @@ class BaseLoader(metaclass=ABCMeta):
     """Базовый класс для загрузчиков"""
 
     @abstractmethod
-    async def load(self, loop: AbstractEventLoop, pool: ProcessPoolExecutor, queue: Queue):
+    async def load(self, queue: Queue):
         """Загружает документы в хранилище
 
-        :param loop:
-        :param pool:
         :param queue:
         :return:
         """
@@ -39,51 +38,71 @@ class ElasticIndex(BaseLoader):
     index_name: str
     state: State
     logger: logging.Logger
+    chunk_size: int
 
-    @backoff()
-    async def load(self, loop: AbstractEventLoop, pool: ProcessPoolExecutor, queue: Queue):
+    def __post_init__(self):
+        self._loaded_counter = Counter()
+
+    async def load(self, queue: Queue):
         """Загружает документы в хранилище
 
-        :param loop:
-        :param pool:
         :param queue:
         :return:
         """
         batch = []
-        task_set = set()
         while True:
-            message = queue.get()
+            message = await queue.get()
             if message is not None:
                 batch.append(message)
-            if queue.empty():
-                task = loop.run_in_executor(pool, self.transformer.transform, batch)
-                task_set.add(task)
-                if len(task_set) >= pool._max_workers:
-                    done_set, task_set = await asyncio.wait(
-                        task_set, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    await
+            if queue.empty() or (batch and len(batch) >= self.chunk_size):
+                await self._load(batch)
+                self.logger.debug('Total loaded: %s', self._loaded_counter)
                 batch = []
             if message is None:
                 break
-        success, failed = await async_bulk(self.elastic, index=self.index_name, actions=self.generate_actions(items))
-        if success:
-            self.update_last_modified
-        return success
 
-    async def task_set_load_helper(self, task_set: set, connection):
-        for future in task_set:
-            await self.load(await future, connection)
+    async def _load(self, messages: list[Message]):
+        transformed_messages = await self.transformer.transform(messages)
+        success, failed = await async_bulk(
+            self.elastic,
+            index=self.index_name,
+            actions=self._generate_actions(transformed_messages),
+        )
+        if failed:
+            raise Exception('Got failed items on elastic bulk insert')
+        await self._update_last_modified(transformed_messages)
+        self._loaded_counter.update([msg.producer_name for msg in transformed_messages])
 
-    @staticmethod
-    def generate_actions(message: list[documents.Movie]) -> Generator[dict, None, None]:
-        """Генерирует объекты запроса для сохранения в elasticsearch.
+    async def _update_last_modified(self, messages: list[Message]) -> None:
+        """Для каждого типа продьюсеров нужно отдельно апдейтить last_modified.
 
-        :param items:
+        :param messages:
         :return:
         """
-        for item in items:
+        producer_names = set([message.producer_name for message in messages])
+        for name in producer_names:
+            message_with_max_modified = max(
+                filter(
+                    lambda m: m.producer_name == name,
+                    messages,
+                ),
+                key=attrgetter('obj_modified'),
+            )
+
+            last_modified = await get_last_modified(self.state, name)
+            last_modified = max(last_modified, message_with_max_modified.obj_modified)
+
+            await self.state.save_state(name, last_modified.isoformat())
+
+    @staticmethod
+    def _generate_actions(messages: list[Message]) -> Generator[dict, None, None]:
+        """Генерирует объекты запроса для сохранения в elasticsearch.
+
+        :param messages:
+        :return:
+        """
+        for message in messages:
             yield dict(
-                _id=item.id,
-                _source=item.dict(),
+                _id=message.obj_id,
+                _source=message.obj_model.dict(),
             )
