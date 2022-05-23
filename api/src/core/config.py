@@ -35,7 +35,6 @@ PG_DSN = dict(
 )
 
 # Настройка индексатора
-ETL_FILM_INDEX_NAME = os.getenv('ETL_FILM_INDEX_NAME', 'films')
 ETL_STORAGE_STATE_KEY = os.getenv('ETL_STORAGE_STATE_KEY', 'indexer')
 ETL_PRODUCER_CHUNK_SIZE = int(os.getenv('ETL_PRODUCER_CHUNK_SIZE', 500))
 ETL_PRODUCER_QUEUE_SIZE = int(os.getenv('ETL_PRODUCER_QUEUE_SIZE', 500))

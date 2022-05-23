@@ -50,22 +50,56 @@ class App:
 
         signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
         for s in signals:
-            loop.add_signal_handler(s, lambda sig: asyncio.create_task(self.shutdown(sig, loop)))
+            loop.add_signal_handler(s, lambda s=s: asyncio.create_task(self.shutdown(s, loop)))
+
+        storage = state.RedisStorage(redis=await redis.get_redis(), name=config.ETL_STORAGE_STATE_KEY)
+        state_obj = state.State(storage)
 
         tasks = []
         for build_pipeline in self.pipelines_builders:
-            pipe = await build_pipeline()
+            pipe = await build_pipeline(state_obj)
             task = loop.create_task(pipe.execute())
             tasks.append(task)
 
         await asyncio.gather(*tasks, return_exceptions=False)
 
 
-async def build_film_index_pipeline() -> pipeline.Pipeline:
-    logger = logging.getLogger().getChild('FilmIndexPipeline')
+async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
+    logger = logging.getLogger().getChild('GenreIndexPipeline')
 
-    storage = state.RedisStorage(redis=await redis.get_redis(), name=config.ETL_STORAGE_STATE_KEY)
-    state_obj = state.State(storage)
+    enricher = enrichers.GenreEnricher(
+        db=await postgres.get_postgres(),
+        logger=logger.getChild('Enricher'),
+        max_batch_size=config.ETL_ENRICHER_MAX_BATCH_SIZE,
+        chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
+    )
+    loader = loaders.ElasticIndex(
+        elastic=await elastic.get_elastic(),
+        transformer=transformers.PgGenreToElasticSearch(),
+        index_name='genres',
+        state=state_obj,
+        logger=logger.getChild('Loader'),
+        chunk_size=config.ETL_LOADER_CHUNK_SIZE,
+    )
+    return pipeline.Pipeline(
+        producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
+        producers=[
+            producers.GenreModified(
+                db=await postgres.get_postgres(),
+                state=state_obj,
+                logger=logger.getChild('GenreModifiedProducer'),
+                chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
+                check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
+            ),
+        ],
+        enricher=enricher,
+        loader=loader,
+        logger=logger,
+    )
+
+
+async def build_film_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
+    logger = logging.getLogger().getChild('FilmIndexPipeline')
 
     enricher = enrichers.FilmEnricher(
         db=await postgres.get_postgres(),
@@ -76,7 +110,7 @@ async def build_film_index_pipeline() -> pipeline.Pipeline:
     loader = loaders.ElasticIndex(
         elastic=await elastic.get_elastic(),
         transformer=transformers.PgFilmToElasticSearch(),
-        index_name=config.ETL_FILM_INDEX_NAME,
+        index_name='films',
         state=state_obj,
         logger=logger.getChild('Loader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
@@ -84,17 +118,17 @@ async def build_film_index_pipeline() -> pipeline.Pipeline:
     return pipeline.Pipeline(
         producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
         producers=[
-            producers.PersonModified(
+            producers.FilmworkPersonModified(
                 db=await postgres.get_postgres(),
                 state=state_obj,
-                logger=logger.getChild('PersonModifiedProducer'),
+                logger=logger.getChild('FilmworkPersonModifiedProducer'),
                 chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
                 check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
             ),
-            producers.GenreModified(
+            producers.FilmworkGenreModified(
                 db=await postgres.get_postgres(),
                 state=state_obj,
-                logger=logger.getChild('GenreModifiedProducer'),
+                logger=logger.getChild('FilmworkGenreModifiedProducer'),
                 chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
                 check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
             ),
@@ -115,6 +149,7 @@ async def build_film_index_pipeline() -> pipeline.Pipeline:
 def indexer():
     pipelines_builders = [
         build_film_index_pipeline,
+        build_genre_index_pipeline,
     ]
 
     app = App(pipelines_builders=pipelines_builders)

@@ -50,7 +50,7 @@ class BaseProducer(metaclass=ABCMeta):
         pass
 
 
-class PersonModified(BaseProducer):
+class FilmworkPersonModified(BaseProducer):
     """Находит все фильмы, в которых приняли участие персоны, чьи данные изменились с последнего синка."""
 
     def sql(self) -> str:
@@ -59,14 +59,15 @@ class PersonModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT pfw.film_work_id as id, p.modified FROM content.person p 
+            SELECT pfw.film_work_id as id, p.modified 
+            FROM content.person p 
             INNER JOIN content.person_film_work pfw ON pfw.person_id = p.id
             WHERE p.modified > $1 
             ORDER BY p.modified DESC
         '''
 
 
-class GenreModified(BaseProducer):
+class FilmworkGenreModified(BaseProducer):
     """Находит все фильмы с жанром, чьи данные изменились с последнего синка."""
 
     def sql(self) -> str:
@@ -75,7 +76,8 @@ class GenreModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT gfw.film_work_id as id, g.modified FROM content.genre g 
+            SELECT gfw.film_work_id as id, g.modified 
+            FROM content.genre g 
             INNER JOIN content.genre_film_work gfw ON gfw.genre_id = g.id
             WHERE g.modified > $1
             ORDER BY g.modified DESC
@@ -91,7 +93,24 @@ class FilmworkModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT id, modified FROM content.film_work
+            SELECT id, modified 
+            FROM content.film_work
             WHERE modified > $1
             ORDER BY modified DESC
+        '''
+
+
+class GenreModified(BaseProducer):
+    """Находит все жанры, чьи данные изменились с последнего синка."""
+
+    def sql(self) -> str:
+        """Возвращает sql-запрос.
+
+        :rtype: str
+        """
+        return '''
+            SELECT g.id as id, g.modified 
+            FROM content.genre g 
+            WHERE g.modified > $1
+            ORDER BY g.modified DESC
         '''

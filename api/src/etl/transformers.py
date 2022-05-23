@@ -63,3 +63,29 @@ class PgFilmToElasticSearch(BaseTransformer):
         return [person.Person(id=p.id, full_name=p.full_name)
                 for p in persons
                 if p.role == role]
+
+
+@dataclass
+class PgGenreToElasticSearch(BaseTransformer):
+
+    async def transform(self, messages: list[Message]) -> list[Message]:
+        """Преобразует модели жанров из бд в список жанров elasticsearch.
+
+        :param messages:
+        :return:
+        """
+        return [self.map(m) for m in messages]
+
+    @staticmethod
+    def map(message: Message) -> Message:
+        """Преобразует модель бд в документ elasticsearch.
+
+        :param message:
+        :rtype: Message
+        """
+        item = postgres.Genre(**message.obj_model.dict())
+        message.obj_model = genre.Genre(
+            id=item.id,
+            name=item.name
+        )
+        return message
