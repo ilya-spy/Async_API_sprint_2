@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Generator
 
 import etl.entities as postgres
 from etl.entities import Message

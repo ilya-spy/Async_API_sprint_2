@@ -1,6 +1,5 @@
-from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Generator, Optional
+from typing import Optional
 
 import asyncpg
 import orjson

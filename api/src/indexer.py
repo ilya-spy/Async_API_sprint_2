@@ -28,18 +28,18 @@ class App:
     @staticmethod
     async def shutdown(sig, loop: asyncio.AbstractEventLoop):
         """Cleanup tasks tied to the service's shutdown."""
-        logging.info(f"Received exit signal {sig.name}...")
-        logging.info("Closing database connections")
-        logging.info("Nacking outstanding messages")
+        logging.info(f'Received exit signal {sig.name}...')
+        logging.info('Closing database connections')
+        logging.info('Nacking outstanding messages')
         tasks = [t for t in asyncio.all_tasks()
                  if t is not asyncio.current_task()]
 
         for task in tasks:
             task.cancel()
 
-        logging.info(f"Cancelling {len(tasks)} outstanding tasks")
+        logging.info(f'Cancelling {len(tasks)} outstanding tasks')
         await asyncio.gather(*tasks)
-        logging.info(f"Flushing metrics")
+        logging.info('Flushing metrics')
         loop.stop()
 
     async def run(self):
