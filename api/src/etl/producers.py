@@ -114,3 +114,19 @@ class GenreModified(BaseProducer):
             WHERE g.modified > $1
             ORDER BY g.modified DESC
         '''
+
+
+class PersonModified(BaseProducer):
+    """Находит все персоны, чьи данные изменились с последнего синка."""
+
+    def sql(self) -> str:
+        """Возвращает sql-запрос.
+
+        :rtype: str
+        """
+        return '''
+            SELECT p.id as id, p.modified
+            FROM content.person p
+            WHERE p.modified > $1
+            ORDER BY p.modified DESC
+        '''
