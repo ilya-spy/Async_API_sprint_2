@@ -13,7 +13,7 @@ class PersonFilm(BaseModel):
 
 class Person(BaseModel):
     """Модель персоны."""
-    uuid: UUID
+    id: UUID
     full_name: str
     films: Optional[List[PersonFilm]]
 

@@ -1,7 +1,7 @@
 
 import logging
 from typing import Optional
-
+from pprint import pprint
 
 CACHE_EXPIRE_IN_SECONDS = 60 * 5  # 5 минут
 
@@ -10,18 +10,20 @@ class CacheAPI:
         self.redis = redis
         self.logger = logging.getLogger("CacheAPI")
 
-    async def get_single(key: str) -> Optional[object]:
+    async def get_single(self, key: str) -> Optional[object]:
         pass
 
 
-    async def put_single(key: str, val: str) -> str:
+    async def put_single(self, key: str, val: str) -> str:
         pass
 
 
-    async def get_index(index: str, offset: Optional[int], size: Optional[int],
-                         sort: Optional[str]) -> list[Optional[object]]:
+    async def get_index(self, index: str, key: str) -> list[Optional[object]]:
         pass
 
 
-    async def put_index(index: str, tuples: list[tuple[str,str]]) -> list[str]:
+    async def put_index(self, index: str, key: str, data: list[object]) -> int:
+        pass
+
+    async def drop_index(self, index, key: str) -> int:
         pass
