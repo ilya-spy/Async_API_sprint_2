@@ -16,6 +16,26 @@ services:
     volumes:
       - ./api:/app
 
+  indexer:
+    build:
+      context: api
+    depends_on:
+      - postgres
+      - elastic
+      - redis
+    environment:
+      - REDIS_HOST
+      - ELASTIC_SCHEMA
+      - ELASTIC_HOST
+      - ELASTIC_PORT
+      - DB_HOST
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+    volumes:
+      - ./api:/app
+    command: make index
+
   admin-panel:
     image: agorobets/admin-panel:latest
     environment:
@@ -36,25 +56,6 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-
-  indexer:
-    build:
-      context: indexer
-    environment:
-      - DB_HOST
-      - DB_NAME
-      - DB_USER
-      - DB_PASSWORD
-      - REDIS_HOST
-      - ES_SCHEMA=${ELASTIC_SCHEMA}
-      - ES_HOST=${ELASTIC_HOST}
-    depends_on:
-      - redis
-      - elastic
-      - postgres
-    volumes:
-      - ./indexer:/app
-    command: make
 
   elastic:
     build:

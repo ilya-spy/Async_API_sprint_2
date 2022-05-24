@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-import redis
+from aioredis import Redis
 
 
 @dataclass
@@ -10,7 +10,7 @@ class BaseStorage(metaclass=ABCMeta):
     """Базовый класс для храненеия состояний etl."""
 
     @abstractmethod
-    def retrieve_state(self) -> dict:
+    async def retrieve_state(self) -> dict:
         """Возвращает сохраненное состояние.
 
         :return:
@@ -18,7 +18,7 @@ class BaseStorage(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def save_state(self, state: dict) -> bool:
+    async def save_state(self, state: dict) -> bool:
         """Сохраняет состояние.
 
         :param state:
@@ -30,25 +30,25 @@ class BaseStorage(metaclass=ABCMeta):
 @dataclass
 class RedisStorage(BaseStorage):
     """Обеспечивает хранение состояния в redis."""
-    redis: redis.Redis
+    redis: Redis
     name: str
 
-    def retrieve_state(self) -> Any:
+    async def retrieve_state(self) -> Any:
         """Возвращает сохраненное состояние.
 
         :return:
         """
-        state = self.redis.hgetall(self.name)
+        state = await self.redis.hgetall(self.name)
         return self.decode_redis(state)
 
-    def save_state(self, state: dict) -> None:
+    async def save_state(self, state: dict) -> None:
         """
         Сохраняет состояние.
 
         :param state:
         :return:
         """
-        self.redis.hset(self.name, mapping=state)
+        await self.redis.hset(self.name, mapping=state)
 
     @classmethod
     def decode_redis(cls, src):
@@ -80,18 +80,17 @@ class State:
     storage: BaseStorage
     _state: dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
-        self._state = self.storage.retrieve_state()
-
-    def retrieve_state(self, key: str) -> Any:
+    async def retrieve_state(self, key: str) -> Any:
         """Возвращает сохраненное состояние по ключу.
 
         :param key:
         :return:
         """
+        if not self._state:
+            self._state = await self.storage.retrieve_state()
         return self._state.get(key)
 
-    def save_state(self, key: str, value: Any) -> bool:
+    async def save_state(self, key: str, value: Any):
         """Сохраняет значение по ключу.
 
         :param key:
@@ -99,4 +98,4 @@ class State:
         :return:
         """
         self._state[key] = value
-        return self.storage.save_state(self._state)
+        await self.storage.save_state(self._state)

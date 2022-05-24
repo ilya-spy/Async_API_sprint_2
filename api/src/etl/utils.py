@@ -1,7 +1,6 @@
+import asyncio
+import functools
 import logging
-import time
-
-import log
 
 
 def backoff(start_sleep_time: float = 0.1,
@@ -21,23 +20,23 @@ def backoff(start_sleep_time: float = 0.1,
     :param logger: логгер для ошибок, если не передан, используется по умолчанию из пакета log
     :return: результат выполнения функции
     """
-
     if logger is None:
-        logger = log.logger
+        logger = logging.getLogger()
 
     def func_wrapper(func):
-        def inner(*args, **kwargs):
+        @functools.wraps(func)
+        async def inner(*args, **kwargs):
             n = 0
             while True:
                 try:
-                    return func(*args, **kwargs)
+                    return await func(*args, **kwargs)
                 except BaseException as e:
-                    logger.info(e)
+                    logger.error(e)
 
                     t = start_sleep_time * (2 ^ n)
                     if t < border_sleep_time:
                         t = border_sleep_time
-                    time.sleep(t)
+                    await asyncio.sleep(t)
                     n += factor
 
         return inner

@@ -1,7 +1,16 @@
+from datetime import datetime
 from enum import Enum
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
+
+
+class Message(BaseModel):
+    producer_name: str
+    obj_id: UUID
+    obj_modified: datetime
+    obj_model: Optional[BaseModel]
 
 
 class RoleEnum(str, Enum):
@@ -10,10 +19,16 @@ class RoleEnum(str, Enum):
     director = 'director'
 
 
+class PersonFilm(BaseModel):
+    id: UUID
+    role: str
+
+
 class Person(BaseModel):
     id: UUID
-    role: RoleEnum
     full_name: str
+    role: Optional[RoleEnum]
+    films: Optional[list[PersonFilm]]
 
 
 class Genre(BaseModel):
@@ -21,7 +36,7 @@ class Genre(BaseModel):
     name: str
 
 
-class Movie(BaseModel):
+class Film(BaseModel):
     id: UUID
     type: str
     title: str
