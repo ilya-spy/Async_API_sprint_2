@@ -86,11 +86,17 @@ class SearchAPI:
 
     async def match_field(self, cursor: SearchCursor, match: SearchFilter):
         """ Look up the specified text to appear in a specified field in all index docs"""
+        # query = {
+        #     "match": {
+        #         match.field: {
+        #             "query": match.query
+        #         }
+        #     }
+        # }
         query = {
-            "match": {
-                match.field: {
-                    "query": match.query
-                }
+            "query_string": {
+                "query": match.query,
+                "default_field": "*"
             }
         }
         return await self.search_index(query, cursor)

@@ -10,7 +10,6 @@ from db.elastic import get_elastic
 from db.redis import get_redis
 
 from services._search import SearchService
-from models.film import Film
 from models.genre import Genre
 
 
@@ -22,4 +21,4 @@ def get_genre_service(
         redis: Redis = Depends(get_redis),
         elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> SearchService:
-    return SearchService('movies', Film, redis, elastic)
+    return SearchService('genres', Genre, redis, elastic)

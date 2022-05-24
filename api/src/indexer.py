@@ -98,9 +98,7 @@ async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipelin
     )
 
 
-async def build_person_index_pipeline(
-        state_obj: state.State
-) -> pipeline.Pipeline:
+async def build_person_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
     logger = logging.getLogger().getChild('PersonIndexPipeline')
 
     enricher = enrichers.PersonEnricher(

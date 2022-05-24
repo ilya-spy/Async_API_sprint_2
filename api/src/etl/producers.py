@@ -109,15 +109,14 @@ class GenreModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT g.id as id, g.modified 
+            SELECT g.id as id, g.modified
             FROM content.genre g 
             WHERE g.modified > $1
             ORDER BY g.modified DESC
         '''
 
-
 class PersonModified(BaseProducer):
-    """Находит все персоны, чьи данные изменились с последнего синка."""
+    """Находит всех персон, чьи данные изменились с последнего синка."""
 
     def sql(self) -> str:
         """Возвращает sql-запрос.

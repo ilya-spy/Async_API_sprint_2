@@ -11,9 +11,8 @@ from .base import BaseEnricher
 class PersonEnricher(BaseEnricher):
     """Получает из бд полные данные по персоне."""
 
-    async def retrieve_models(self, conn: Connection,
-                              messages: list[Message]) -> dict[str, BaseModel]:
-        """Получает из бд персоны и сохраняет в сообщение.
+    async def retrieve_models(self, conn: Connection, messages: list[Message]) -> dict[str, BaseModel]:
+        """Получает из бд персон и сохраняет в сообщение.
 
         :param conn:
         :param messages:

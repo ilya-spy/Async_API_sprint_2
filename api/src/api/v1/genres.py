@@ -8,7 +8,6 @@ from services.genre import get_genre_service
 from services._search import SearchService
 
 from models.genre import Genre
-from models.film import Film
 
 
 router: APIRouter = APIRouter()
@@ -20,7 +19,7 @@ async def get_genres(
             page_size: Union[int, None] = Query(default=50, alias='page[size]'),
             page_number: Union[int, None] = Query(default=1, alias='page[number]'),
             service: SearchService = Depends(get_genre_service)
-) -> list[Film]:
+) -> list[Genre]:
     """
     Returns list of all available genres
     @param sort:
@@ -42,10 +41,10 @@ async def search_genres(
             sort: Union[str, None] = Query(default=None, max_length=50),
             page_size: Union[int, None] = Query(default=50, alias='page[size]'),
             page_number: Union[int, None] = Query(default=1, alias='page[number]'),
-            query: Union[str, None] = Query(default=None),
+            query: Union[str, None] = Query(default='/.*/'),
             fltr: Union[str, None] = Query(default=None),
             service: SearchService = Depends(get_genre_service)
-) -> list[Film]:
+) -> list[Genre]:
     """
     Returns list of docs, matching 'search by name' results with filtering applied
     @param sort:
@@ -53,11 +52,11 @@ async def search_genres(
     @param page_number: int
     @return list[Genre]:
     """
-    result = await service.search_field('title', query, fltr,
+    result = await service.search_field('name', query, fltr,
                                     page_number, page_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='Genres list query not available'
+            detail="Genres list query '%s' not available" % query
         )
     return result

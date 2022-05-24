@@ -13,6 +13,7 @@ fastapi = "==0.77.1"
 orjson = "==3.6.8"
 pydantic = "==1.9.0"
 uvicorn = "==0.17.6"
+asyncpg = "==0.25.0"
 
 [dev-packages]
 

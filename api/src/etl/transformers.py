@@ -89,7 +89,6 @@ class PgGenreToElasticSearch(BaseTransformer):
         )
         return message
 
-
 @dataclass
 class PgPersonToElasticSearch(BaseTransformer):
 
@@ -111,6 +110,6 @@ class PgPersonToElasticSearch(BaseTransformer):
         item = postgres.Person(**message.obj_model.dict())
         message.obj_model = person.Person(
             id=item.id,
-            name=item.name
+            full_name=item.full_name
         )
         return message
