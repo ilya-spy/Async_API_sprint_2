@@ -88,3 +88,29 @@ class PgGenreToElasticSearch(BaseTransformer):
             name=item.name
         )
         return message
+
+
+@dataclass
+class PgPersonToElasticSearch(BaseTransformer):
+
+    async def transform(self, messages: list[Message]) -> list[Message]:
+        """Преобразует модели персон из бд в список персон elasticsearch.
+
+        :param messages:
+        :return:
+        """
+        return [self.map(m) for m in messages]
+
+    @staticmethod
+    def map(message: Message) -> Message:
+        """Преобразует модель бд в документ elasticsearch.
+
+        :param message:
+        :rtype: Message
+        """
+        item = postgres.Person(**message.obj_model.dict())
+        message.obj_model = person.Person(
+            id=item.id,
+            name=item.name
+        )
+        return message

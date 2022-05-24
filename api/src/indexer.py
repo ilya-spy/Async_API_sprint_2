@@ -98,6 +98,42 @@ async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipelin
     )
 
 
+async def build_person_index_pipeline(
+        state_obj: state.State
+) -> pipeline.Pipeline:
+    logger = logging.getLogger().getChild('PersonIndexPipeline')
+
+    enricher = enrichers.PersonEnricher(
+        db=await postgres.get_postgres(),
+        logger=logger.getChild('Enricher'),
+        max_batch_size=config.ETL_ENRICHER_MAX_BATCH_SIZE,
+        chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
+    )
+    loader = loaders.ElasticIndex(
+        elastic=await elastic.get_elastic(),
+        transformer=transformers.PgPersonToElasticSearch(),
+        index_name='persons',
+        state=state_obj,
+        logger=logger.getChild('Loader'),
+        chunk_size=config.ETL_LOADER_CHUNK_SIZE,
+    )
+    return pipeline.Pipeline(
+        producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
+        producers=[
+            producers.PersonModified(
+                db=await postgres.get_postgres(),
+                state=state_obj,
+                logger=logger.getChild('GenreModifiedProducer'),
+                chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
+                check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
+            ),
+        ],
+        enricher=enricher,
+        loader=loader,
+        logger=logger,
+    )
+
+
 async def build_film_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
     logger = logging.getLogger().getChild('FilmIndexPipeline')
 
@@ -150,6 +186,7 @@ def indexer():
     pipelines_builders = [
         build_film_index_pipeline,
         build_genre_index_pipeline,
+        build_person_index_pipeline,
     ]
 
     app = App(pipelines_builders=pipelines_builders)
