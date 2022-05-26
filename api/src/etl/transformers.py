@@ -59,9 +59,9 @@ class PgFilmToElasticSearch(BaseTransformer):
         :param role:
         :return:
         """
-        return [person.Person(id=p.id, full_name=p.full_name)
-                for p in persons
-                if p.role == role]
+        return [person.Person(id=p.id, full_name=p.full_name, films=[])
+                for p in persons 
+                    if p.role == role]
 
 
 @dataclass
@@ -110,6 +110,7 @@ class PgPersonToElasticSearch(BaseTransformer):
         item = postgres.Person(**message.obj_model.dict())
         message.obj_model = person.Person(
             id=item.id,
-            full_name=item.full_name
+            full_name=item.full_name,
+            films=[]
         )
         return message

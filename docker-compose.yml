@@ -13,6 +13,7 @@ services:
       - ELASTIC_PORT
       - APP_HOST=${API_HOST}
       - APP_PORT=${API_PORT}
+      - DEBUG
     volumes:
       - ./api:/app
 
@@ -32,6 +33,7 @@ services:
       - DB_NAME
       - DB_USER
       - DB_PASSWORD
+      - DEBUG
     volumes:
       - ./api:/app
     command: make index
@@ -56,6 +58,8 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
 
   elastic:
     build:
@@ -68,6 +72,8 @@ services:
 
   redis:
     image: redis:7.0.0-alpine
+    ports:
+      - "6379:6379"
 
   nginx:
     image: nginx:1.19.2

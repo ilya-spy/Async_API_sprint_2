@@ -72,8 +72,7 @@
             "type": "keyword"
           },
           "name": {
-            "type": "keyword",
-            "analyzer": "ru_en"
+            "type": "keyword"
           }
         }
       },
@@ -84,9 +83,22 @@
           "id": {
             "type": "keyword"
           },
-          "name": {
+          "full_name": {
             "type": "text",
             "analyzer": "ru_en"
+          },
+          "films": {
+            "type": "nested",
+            "dynamic": "strict",
+            "properties": {
+              "film_id": {
+                "type": "keyword"
+              },
+              "role": {
+                "type": "text",
+                "analyzer": "ru_en"
+              }
+            }
           }
         }
       },
@@ -97,9 +109,22 @@
           "id": {
             "type": "keyword"
           },
-          "name": {
+          "full_name": {
             "type": "text",
             "analyzer": "ru_en"
+          },
+          "films": {
+            "type": "nested",
+            "dynamic": "strict",
+            "properties": {
+              "film_id": {
+                "type": "keyword"
+              },
+              "role": {
+                "type": "text",
+                "analyzer": "ru_en"
+              }
+            }
           }
         }
       },
@@ -110,9 +135,22 @@
           "id": {
             "type": "keyword"
           },
-          "name": {
+          "full_name": {
             "type": "text",
             "analyzer": "ru_en"
+          },
+          "films": {
+            "type": "nested",
+            "dynamic": "strict",
+            "properties": {
+              "film_id": {
+                "type": "keyword"
+              },
+              "role": {
+                "type": "text",
+                "analyzer": "ru_en"
+              }
+            }
           }
         }
       }

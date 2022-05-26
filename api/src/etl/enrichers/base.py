@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from asyncio import Queue
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from asyncpg.connection import Connection
 from pydantic import BaseModel
@@ -15,11 +15,12 @@ class BaseEnricher(metaclass=ABCMeta):
     """Базовый класс обогатителя."""
     db: postgres.DB
     logger: logging.Logger
-    max_batch_size: int
     chunk_size: int
 
+    conn: object = field(default=None)
+
     async def enrich(self, producer_queue: Queue, loader_queue: Queue) -> None:
-        conn = await self.db.get_connection()
+        self.conn = await self.db.get_connection()
         batch = []
         total_enriched = 0
         try:
@@ -27,8 +28,8 @@ class BaseEnricher(metaclass=ABCMeta):
                 message = await producer_queue.get()
                 if message is not None:
                     batch.append(message)
-                if batch and (len(batch) >= self.max_batch_size or producer_queue.empty()):
-                    models_map = await self.retrieve_models(conn, batch)
+                if batch and (len(batch) >= self.chunk_size or producer_queue.empty()):
+                    models_map = await self.retrieve_models(self.conn, batch)
                     for message in batch:
                         message.obj_model = models_map[message.obj_id]
                         await loader_queue.put(message)
@@ -39,7 +40,11 @@ class BaseEnricher(metaclass=ABCMeta):
                 if message is None:
                     break
         finally:
-            await conn.close()
+            await self.release()
+
+    async def release(self):
+            await self.conn.close()
+            self.logger.info('DB connection closed')
 
     @abstractmethod
     async def retrieve_models(self, conn: Connection, messages: list[Message]) -> dict[str, BaseModel]:

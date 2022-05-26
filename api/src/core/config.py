@@ -1,10 +1,15 @@
 import os
+import logging
 from logging import config as logging_config
 
 from core.logger import LOGGING
 
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)
+if os.environ.get('DEBUG'):
+    logging.info('Enabling debug logging...')
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
 
 # Название проекта. Используется в Swagger-документации
 PROJECT_NAME = os.getenv('PROJECT_NAME', 'movies')
@@ -39,9 +44,9 @@ ETL_STORAGE_STATE_KEY = os.getenv('ETL_STORAGE_STATE_KEY', 'indexer')
 ETL_PRODUCER_CHUNK_SIZE = int(os.getenv('ETL_PRODUCER_CHUNK_SIZE', 500))
 ETL_PRODUCER_QUEUE_SIZE = int(os.getenv('ETL_PRODUCER_QUEUE_SIZE', 500))
 ETL_PRODUCER_CHECK_INTERVAL = int(os.getenv('ETL_PRODUCER_CHECK_INTERVAL', 10))
-ETL_LOADER_CHUNK_SIZE = int(os.getenv('ETL_LOADER_CHUNK_SIZE', 500))
-ETL_ENRICHER_MAX_BATCH_SIZE = int(os.getenv('ETL_ENRICHER_MAX_BATCH_SIZE', 500))
-ETL_ENRICHER_CHUNK_SIZE = int(os.getenv('ETL_ENRICHER_CHUNK_SIZE', 500))
+ETL_LOADER_CHUNK_SIZE = int(os.getenv('ETL_LOADER_CHUNK_SIZE', 100))
+ETL_ENRICHER_MAX_BATCH_SIZE = int(os.getenv('ETL_ENRICHER_MAX_BATCH_SIZE', 100))
+ETL_ENRICHER_CHUNK_SIZE = int(os.getenv('ETL_ENRICHER_CHUNK_SIZE', 100))
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

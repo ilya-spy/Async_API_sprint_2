@@ -48,6 +48,19 @@
       "full_name": {
         "type": "text",
         "analyzer": "ru_en"
+      },
+      "films": {
+        "type": "nested",
+        "dynamic": "strict",
+        "properties": {
+          "film_id": {
+            "type": "keyword"
+          },
+          "role": {
+            "type": "text",
+            "analyzer": "ru_en"
+          }
+        }
       }
     }
   }
