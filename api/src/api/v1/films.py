@@ -5,7 +5,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from api.v1.films_schemas import FilmDetails, FilmBase
+from api.v1.schemes.converter import FilmBaseConverter, FilmConverter
+from api.v1.schemes.film import Film, FilmBase
 from services.film import FilmService, get_film_service
 
 router = APIRouter()
@@ -40,21 +41,14 @@ async def search_films(
             status_code=HTTPStatus.NOT_FOUND,
             detail='films not found'
         )
-    return [
-        FilmBase(
-            uuid=flm.id,
-            title=flm.title,
-            imdb_rating=flm.imdb_rating
-        )
-        for flm in result
-    ]
+    return [FilmBaseConverter.conver(flm) for flm in result]
 
 
-@router.get('/{film_id}/', response_model=FilmDetails)
+@router.get('/{film_id}/', response_model=Film)
 async def film_details(
         film_id: UUID,
         film_service: FilmService = Depends(get_film_service)
-) -> FilmDetails:
+) -> Film:
     """
 
     @param film_id: film unique identifier
@@ -67,16 +61,7 @@ async def film_details(
             status_code=HTTPStatus.NOT_FOUND,
             detail='film not found'
         )
-    return FilmDetails(
-        uuid=film.id,
-        title=film.title,
-        imdb_rating=film.imdb_rating,
-        description=film.description,
-        genre=film.genre,
-        actors=film.actors,
-        writers=film.writers,
-        directors=film.directors,
-    )
+    return FilmConverter.convert(film)
 
 
 @router.get("/")
@@ -109,7 +94,4 @@ async def films(
             status_code=HTTPStatus.NOT_FOUND,
             detail='films not found'
         )
-    return [
-        FilmBase(uuid=flm.id, title=flm.title, imdb_rating=flm.imdb_rating)
-        for flm in result
-    ]
+    return [FilmBaseConverter.conver(flm) for flm in result]

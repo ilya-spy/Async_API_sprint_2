@@ -2,15 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-
-class Genre(BaseModel):
-    id: UUID
-    name: str
-
-
-class Person(BaseModel):
-    id: UUID
-    full_name: str
+from api.v1.schemes.genre import Genre
+from api.v1.schemes.person import PersonBase
 
 
 class FilmBase(BaseModel):
@@ -19,12 +12,12 @@ class FilmBase(BaseModel):
     imdb_rating: float
 
 
-class FilmDetails(BaseModel):
+class Film(BaseModel):
     uuid: UUID
     title: str
     imdb_rating: float
     description: str
     genre: list[Genre]
-    actors: list[Person]
-    writers: list[Person]
-    directors: list[Person]
+    actors: list[PersonBase]
+    writers: list[PersonBase]
+    directors: list[PersonBase]
