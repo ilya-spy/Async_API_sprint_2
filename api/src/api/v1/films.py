@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.v1.schemes.converter import FilmBaseConverter, FilmConverter
 from api.v1.schemes.film import Film, FilmBase
-from services.film import FilmService, get_film_service
+from services._search import SearchService
+from services.film import get_film_service
 
 router = APIRouter()
 
@@ -16,26 +17,29 @@ logger = logging.getLogger(__name__)
 
 @router.get("/search")
 async def search_films(
-        query: Union[str, None],
-        pg_size: Union[int, None] = Query(
-            default=None,
-            alias="page[size]"
-        ),
-        pg_number: Union[int, None] = Query(
-            default=None,
-            alias="page[number]"
-        ),
-        _film_service: FilmService = Depends(get_film_service)
+        query: str,
+        pg_size: int = Query(default=50, alias="page[size]"),
+        pg_number: int = Query(default=1, alias="page[number]"),
+        _film_service: SearchService = Depends(get_film_service)
 ) -> list[FilmBase]:
-    """
-    Search for 'query' in films
+    """Search for 'query' in films
+
     @param query: - searching string
     @param pg_size: - max elements output
     @param pg_number: - offset
     @param _film_service: - internal parameter for work with storages
     @return list[FilmBase]: - corresponding films
     """
-    result = await _film_service.search(query, pg_number, pg_size)
+    # FixMe use such fields 'search_fields = ['title', 'description']'
+    result = await _film_service.search_field(
+        field='title',
+        query=query,
+        filter=None,
+        page=pg_number,
+        size=pg_size,
+        sort=None
+    )
+
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
@@ -47,7 +51,7 @@ async def search_films(
 @router.get('/{film_id}/', response_model=Film)
 async def film_details(
         film_id: UUID,
-        film_service: FilmService = Depends(get_film_service)
+        film_service: SearchService = Depends(get_film_service)
 ) -> Film:
     """
 
@@ -55,7 +59,8 @@ async def film_details(
     @param film_service: film extractor
     @return FilmDetails:
     """
-    film = await film_service.get_by_id(str(film_id))
+    film = await film_service.get_single(str(film_id))
+
     if not film:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
@@ -66,18 +71,14 @@ async def film_details(
 
 @router.get("/")
 async def films(
-        sort: Union[str, None] = Query(default=None, max_length=50),
-        pg_size: Union[int, None] = Query(default=None, alias="page[size]"),
-        pg_number: Union[int, None] = Query(
+        sort: str | None = Query(default=None, max_length=50),
+        pg_size: int = Query(default=50, alias="page[size]"),
+        pg_number: int = Query(default=1, alias="page[number]"),
+        fltr: Union[UUID, None] = Query(
             default=None,
-            alias="page[number]"
+            alias="filter[genre]"
         ),
-        fltr: Union[str, None] = Query(
-            default=None,
-            alias="filter[genre]",
-            max_length=50
-        ),
-        _film_service: FilmService = Depends(get_film_service)
+        _film_service: SearchService = Depends(get_film_service)
 ) -> list[FilmBase]:
     """  Returns films
 
@@ -88,7 +89,16 @@ async def films(
     @param _film_service:
     @return list[FilmBase]:
     """
-    result = await _film_service.get_films(pg_number, pg_size, fltr, sort)
+    if fltr:
+        result = await _film_service.search_nested_field(
+            "genre.id",
+            str(fltr),
+            pg_number,
+            pg_size,
+            sort
+        )
+    else:
+        result = await _film_service.list_all(pg_number, pg_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,

@@ -32,6 +32,15 @@ class SearchFilter:
         return f'SearchFilter::field={self.field},query={self.query},filter={self.filter}'
 
 
+@dataclass
+class SearchNestedField:
+    field: str
+    value: str
+
+    def __repr__(self):
+        return f'SearchNestedField::field={self.field},value={self.value}'
+
+
 class SearchAPI:
     def __init__(self, index: str, elastic: AsyncElasticsearch) -> None:
         self.elastic = elastic
@@ -64,7 +73,8 @@ class SearchAPI:
             self.logger.exception("The requested index was not found")
             return []
         try:
-            self.logger.info("Total found %d documents" % (resp['hits']['total']['value']))
+            self.logger.info(
+                "Total found %d documents" % (resp['hits']['total']['value']))
             self.fetched += len(resp['hits']['hits'])
             return resp['hits']['hits']
         except KeyError:
@@ -89,6 +99,26 @@ class SearchAPI:
                 "query": match.query,
                 "default_field": "*"
             }
+        }
+        return await self.search_index(query, cursor)
+
+    async def match_nested_field(
+            self,
+            cursor: SearchCursor,
+            nest: SearchNestedField
+    ):
+        field_pos = nest.field.rfind(".")
+        query = {
+            "nested": {
+                "path": nest.field[:field_pos],
+                "query": {
+                    "match": {
+                        nest.field: {
+                            "query": nest.value,
+                        },
+                    },
+                },
+            },
         }
         return await self.search_index(query, cursor)
 
@@ -128,13 +158,67 @@ class SearchService:
         # search all from elastic and convert
         resp = await self.searcher.list_index(cursor)
 
-        converted = [self.model(**entry['_source']) for entry in (resp if resp else [])]
-        self.logger.info(f"Fetched and converted {len(converted)} {self.index} elastic docs")
+        converted = [self.model(**entry['_source']) for entry in
+                     (resp if resp else [])]
+        self.logger.info(
+            f"Fetched and converted {len(converted)} {self.index} elastic docs")
 
         # put page to cache
         await self.cacher.put_index(self.index, repr(cursor), converted)
         self.logger.info("%s index put as key: %s"
                          % (self.index, repr(cursor)))
+
+        return converted
+
+    async def search_nested_field(
+            self,
+            field: str,
+            field_val: str,
+            page: Optional[int],
+            size: Optional[int],
+            sort: Optional[str]
+    ) -> list:
+        """ Looking for nested field like with the corresponding value
+
+        @param field:
+        @param field_val:
+        @param page:
+        @param size:
+        @param sort:
+        @return:
+        """
+        cursor = SearchCursor(page, size, sort)
+        match = SearchNestedField(field, field_val)
+
+        # look in cache upfront
+        if cached := await self.cacher.get_index(
+                self.index,
+                repr('_'.join([repr(cursor), repr(match)]))
+        ):
+            self.logger.info(
+                "%s index get from cache: %s"
+                % (self.index, repr('_'.join([repr(cursor), repr(match)]))))
+            return [self.model(**c) for c in cached]
+
+        # search for field matches in elastic
+        resp = await self.searcher.match_nested_field(cursor, match)
+
+        converted = [self.model(**entry['_source'])
+                     for entry in (resp if resp else [])]
+        self.logger.info(
+            f"Fetched and converted {len(converted)} {self.index} elastic docs"
+        )
+
+        # put page to cache
+        if converted:
+            await self.cacher.put_index(
+                self.index,
+                repr('_'.join([repr(cursor), repr(match)])),
+                list(map(lambda o: o.dict(), converted)))
+            self.logger.info("%s index put as key: %s"
+                             % (
+                                 self.index,
+                                 repr(SearchCursor(page, size, sort))))
 
         return converted
 
@@ -160,8 +244,9 @@ class SearchService:
         ):
             self.logger.info(
                 "%s index get from cache: %s"
-                % (self.index, repr('_'.join([repr(cursor), repr(match)]))))
-            return cached
+                % (self.index, repr('_'.join([repr(cursor), repr(match)])))
+            )
+            return [self.model(**c) for c in cached]
 
         # search for field matches in elastic
         resp = await self.searcher.match_field(cursor, match)
@@ -172,24 +257,26 @@ class SearchService:
             f"Fetched and converted {len(converted)} {self.index} elastic docs")
 
         # put page to cache
-        if len(converted):
+        if converted:
             await self.cacher.put_index(
                 self.index,
                 repr('_'.join([repr(cursor), repr(match)])),
                 list(map(lambda o: o.dict(), converted)))
             self.logger.info("%s index put as key: %s"
-                             % (self.index, repr(SearchCursor(page, size, sort))))
+                             % (
+                                 self.index,
+                                 repr(SearchCursor(page, size, sort))))
 
         return converted
 
-    async def get_single(self, uuid: UUID, model: object):
+    async def get_single(self, uuid: str):
         # look in cache upfront
         if cached := await self.cacher.get_single(uuid):
             self.logger.info("%s id record get from cache: %s"
                              % (self.index, cached))
-            return model(**cached)
+            return self.model(**cached)
 
-        result = await self.searcher.look_single(uuid, model)
+        result = await self.searcher.look_single(uuid, self.model)
         self.logger.info("got result search: " + str(result))
         if result:
             await self.cacher.put_single(uuid, result)
