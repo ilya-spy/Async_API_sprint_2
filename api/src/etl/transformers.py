@@ -60,8 +60,7 @@ class PgFilmToElasticSearch(BaseTransformer):
         :return:
         """
         return [person.Person(id=p.id, full_name=p.full_name, films=[])
-                for p in persons 
-                    if p.role == role]
+                for p in persons if p.role == role]
 
 
 @dataclass
@@ -88,6 +87,7 @@ class PgGenreToElasticSearch(BaseTransformer):
             name=item.name
         )
         return message
+
 
 @dataclass
 class PgPersonToElasticSearch(BaseTransformer):

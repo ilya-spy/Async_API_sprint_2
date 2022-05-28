@@ -2,7 +2,6 @@ import asyncio
 import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
-import re
 
 from db import postgres
 from etl import entities, state
@@ -127,6 +126,7 @@ class GenreModified(BaseProducer):
             WHERE g.modified > $1
             ORDER BY g.modified DESC
         '''
+
 
 class PersonModified(BaseProducer):
     """Находит всех персон, чьи данные изменились с последнего синка."""

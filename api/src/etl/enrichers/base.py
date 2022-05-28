@@ -43,8 +43,8 @@ class BaseEnricher(metaclass=ABCMeta):
             await self.release()
 
     async def release(self):
-            await self.conn.close()
-            self.logger.info('DB connection closed')
+        await self.conn.close()
+        self.logger.info('DB connection closed')
 
     @abstractmethod
     async def retrieve_models(self, conn: Connection, messages: list[Message]) -> dict[str, BaseModel]:

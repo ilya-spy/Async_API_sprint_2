@@ -20,14 +20,12 @@ class App:
     pipelines_builders: list[callable]
     _stopped: bool = False
 
-
     @staticmethod
     def startup():
         redis.redis = aioredis.from_url(f'redis://{config.REDIS_HOST}:{config.REDIS_PORT}')
         elastic.es = AsyncElasticsearch(
             hosts=[f'{config.ELASTIC_SCHEME}://{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
         postgres.postgres = postgres.DB(dsn=config.PG_DSN)
-
 
     @staticmethod
     async def shutdown(sig, loop: asyncio.AbstractEventLoop):

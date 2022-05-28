@@ -44,7 +44,6 @@ class ElasticIndex(BaseLoader):
     def __post_init__(self):
         self._loaded_counter = Counter()
 
-
     async def load(self, queue: Queue):
         """Загружает документы в хранилище
 
@@ -62,7 +61,6 @@ class ElasticIndex(BaseLoader):
                 batch = []
             if message is None:
                 break
-
 
     async def _load(self, messages: list[Message]):
         transformed_messages = await self.transformer.transform(messages)
@@ -87,7 +85,6 @@ class ElasticIndex(BaseLoader):
         await self._update_last_modified(transformed_messages)
         self._loaded_counter.update([msg.producer_name for msg in transformed_messages])
 
-
     async def _update_last_modified(self, messages: list[Message]) -> None:
         """Для каждого типа продьюсеров нужно отдельно апдейтить last_modified.
 
@@ -108,7 +105,6 @@ class ElasticIndex(BaseLoader):
             last_modified = max(last_modified, message_with_max_modified.obj_modified)
 
             await self.state.save_state(name, last_modified.isoformat())
-
 
     @staticmethod
     def _generate_actions(messages: list[Message]) -> Generator[dict, None, None]:

@@ -17,10 +17,10 @@ router: APIRouter = APIRouter()
 
 @router.get('/', response_model=list[Person])
 async def get_persons(
-            sort: Union[str, None] = Query(default=None, max_length=50),
-            page_size: Union[int, None] = Query(default=50, alias='page[size]'),
-            page_number: Union[int, None] = Query(default=1, alias='page[number]'),
-            service: SearchService = Depends(get_person_service)
+        sort: Union[str, None] = Query(default=None, max_length=50),
+        page_size: Union[int, None] = Query(default=50, alias='page[size]'),
+        page_number: Union[int, None] = Query(default=1, alias='page[number]'),
+        service: SearchService = Depends(get_person_service)
 ) -> list[Person]:
     """
     Returns list of all available persons
@@ -40,12 +40,12 @@ async def get_persons(
 
 @router.get('/search', response_model=list[Person])
 async def search_persons(
-            sort: Union[str, None] = Query(default=None, max_length=50),
-            page_size: Union[int, None] = Query(default=50, alias='page[size]'),
-            page_number: Union[int, None] = Query(default=1, alias='page[number]'),
-            query: Union[str, None] = Query(default='/.*/'),
-            fltr: Union[str, None] = Query(default=None),
-            service: SearchService = Depends(get_person_service)
+        sort: Union[str, None] = Query(default=None, max_length=50),
+        page_size: Union[int, None] = Query(default=50, alias='page[size]'),
+        page_number: Union[int, None] = Query(default=1, alias='page[number]'),
+        query: Union[str, None] = Query(default='/.*/'),
+        fltr: Union[str, None] = Query(default=None),
+        service: SearchService = Depends(get_person_service)
 ) -> list[Person]:
     """
     Returns list of docs, matching 'search by name' results with filtering applied
@@ -55,7 +55,7 @@ async def search_persons(
     @return list[Person]:
     """
     result = await service.search_field('full_name', query, fltr,
-                                    page_number, page_size, sort)
+                                        page_number, page_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
