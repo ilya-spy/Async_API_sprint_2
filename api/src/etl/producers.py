@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from db import postgres
 from etl import entities, state
@@ -11,12 +11,13 @@ from etl.helpers import get_last_modified
 @dataclass
 class BaseProducer(metaclass=ABCMeta):
     """Базовый класс для продьюсеров получающих данные из postgres"""
-
     db: postgres.DB
     check_interval: float
     chunk_size: int
     state: state.State
     logger: logging.Logger
+
+    conn: object = field(default=None)
 
     async def produce(self, queue: asyncio.Queue) -> None:
         """ В бесконечном цикле выполняет запросы к бд и отправляет найденные измененные записи в очередь.
@@ -25,21 +26,32 @@ class BaseProducer(metaclass=ABCMeta):
         :param queue:
         :rtype: None
         """
-        conn = await self.db.get_connection()
+        self.conn = await self.db.get_connection()
+        self.logger.info('Established new DB connection')
         try:
-            last_modified = await get_last_modified(self.state, self.__class__.__name__)
             while True:
-                async with conn.transaction():
-                    async for row in conn.cursor(self.sql(), last_modified, prefetch=self.chunk_size):
+                # need to advance last modified only when confirmed from loader through State
+                # otherwise failures in elastic loader don't have feedback for producer
+                last_modified = await get_last_modified(self.state, self.__class__.__name__)
+                # since last confirmed update
+                total_produced = 0
+                async with self.conn.transaction():
+                    async for row in self.conn.cursor(self.sql(), last_modified, prefetch=self.chunk_size):
                         await queue.put(entities.Message(
                             producer_name=self.__class__.__name__,
                             obj_id=row['id'],
                             obj_modified=row['modified'],
                         ))
                         last_modified = max(last_modified, row['modified'])
+                        total_produced += 1
+                self.logger.debug(f'Items produced: {total_produced}')
                 await asyncio.sleep(self.check_interval)
         finally:
-            await conn.close()
+            self.release()
+
+    async def release(self):
+        await self.conn.close()
+        self.logger.info('DB connection closed')
 
     @abstractmethod
     def sql(self) -> str:
@@ -109,7 +121,7 @@ class GenreModified(BaseProducer):
         :rtype: str
         """
         return '''
-            SELECT g.id as id, g.modified 
+            SELECT g.id as id, g.modified
             FROM content.genre g 
             WHERE g.modified > $1
             ORDER BY g.modified DESC
@@ -117,7 +129,7 @@ class GenreModified(BaseProducer):
 
 
 class PersonModified(BaseProducer):
-    """Находит все персоны, чьи данные изменились с последнего синка."""
+    """Находит всех персон, чьи данные изменились с последнего синка."""
 
     def sql(self) -> str:
         """Возвращает sql-запрос.

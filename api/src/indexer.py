@@ -1,6 +1,8 @@
+
 import asyncio
 import logging
 import signal
+import os
 from dataclasses import dataclass
 
 import aioredis
@@ -48,9 +50,10 @@ class App:
 
         loop = asyncio.get_running_loop()
 
-        signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
-        for s in signals:
-            loop.add_signal_handler(s, lambda s=s: asyncio.create_task(self.shutdown(s, loop)))
+        if os.name != 'nt':
+            signals = (signal.SIGTERM, signal.SIGINT)
+            for s in signals:
+                loop.add_signal_handler(s, lambda s=s: asyncio.create_task(self.shutdown(s, loop)))
 
         storage = state.RedisStorage(redis=await redis.get_redis(), name=config.ETL_STORAGE_STATE_KEY)
         state_obj = state.State(storage)
@@ -61,7 +64,10 @@ class App:
             task = loop.create_task(pipe.execute())
             tasks.append(task)
 
-        await asyncio.gather(*tasks, return_exceptions=False)
+        try:
+            await asyncio.gather(*tasks, return_exceptions=False)
+        finally:
+            await self.shutdown(signal.SIGINT, loop)
 
 
 async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
@@ -69,8 +75,7 @@ async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipelin
 
     enricher = enrichers.GenreEnricher(
         db=await postgres.get_postgres(),
-        logger=logger.getChild('Enricher'),
-        max_batch_size=config.ETL_ENRICHER_MAX_BATCH_SIZE,
+        logger=logger.getChild('GenreModifiedEnricher'),
         chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
     )
     loader = loaders.ElasticIndex(
@@ -78,7 +83,7 @@ async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipelin
         transformer=transformers.PgGenreToElasticSearch(),
         index_name='genres',
         state=state_obj,
-        logger=logger.getChild('Loader'),
+        logger=logger.getChild('GenreModifiedLoader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
     )
     return pipeline.Pipeline(
@@ -98,15 +103,12 @@ async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipelin
     )
 
 
-async def build_person_index_pipeline(
-        state_obj: state.State
-) -> pipeline.Pipeline:
+async def build_person_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
     logger = logging.getLogger().getChild('PersonIndexPipeline')
 
     enricher = enrichers.PersonEnricher(
         db=await postgres.get_postgres(),
-        logger=logger.getChild('Enricher'),
-        max_batch_size=config.ETL_ENRICHER_MAX_BATCH_SIZE,
+        logger=logger.getChild('PersonModifiedEnricher'),
         chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
     )
     loader = loaders.ElasticIndex(
@@ -114,7 +116,7 @@ async def build_person_index_pipeline(
         transformer=transformers.PgPersonToElasticSearch(),
         index_name='persons',
         state=state_obj,
-        logger=logger.getChild('Loader'),
+        logger=logger.getChild('PersonModifiedLoader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
     )
     return pipeline.Pipeline(
@@ -123,7 +125,7 @@ async def build_person_index_pipeline(
             producers.PersonModified(
                 db=await postgres.get_postgres(),
                 state=state_obj,
-                logger=logger.getChild('GenreModifiedProducer'),
+                logger=logger.getChild('PersonModifiedProducer'),
                 chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
                 check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
             ),
@@ -139,8 +141,7 @@ async def build_film_index_pipeline(state_obj: state.State) -> pipeline.Pipeline
 
     enricher = enrichers.FilmEnricher(
         db=await postgres.get_postgres(),
-        logger=logger.getChild('Enricher'),
-        max_batch_size=config.ETL_ENRICHER_MAX_BATCH_SIZE,
+        logger=logger.getChild('FilmworkEnricher'),
         chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
     )
     loader = loaders.ElasticIndex(
@@ -148,7 +149,7 @@ async def build_film_index_pipeline(state_obj: state.State) -> pipeline.Pipeline
         transformer=transformers.PgFilmToElasticSearch(),
         index_name='films',
         state=state_obj,
-        logger=logger.getChild('Loader'),
+        logger=logger.getChild('FilmworkLoader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
     )
     return pipeline.Pipeline(

@@ -4,7 +4,7 @@ import logging
 
 
 def backoff(start_sleep_time: float = 0.1,
-            factor: int = 2,
+            factor: int = 1,
             border_sleep_time: float = 10,
             logger: logging.Logger = None):
     """
@@ -33,8 +33,12 @@ def backoff(start_sleep_time: float = 0.1,
                 except BaseException as e:
                     logger.error(e)
 
+                    # hard stop after 10 attempts
+                    # if n / (factor or 1) > 10:
+                    #     break
+
                     t = start_sleep_time * (2 ^ n)
-                    if t < border_sleep_time:
+                    if t >= border_sleep_time:
                         t = border_sleep_time
                     await asyncio.sleep(t)
                     n += factor

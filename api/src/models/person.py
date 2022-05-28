@@ -7,8 +7,9 @@ from models import helpers
 
 
 class PersonFilm(BaseModel):
-    id: UUID
+    film_id: UUID
     role: str
+    title: str
 
 
 class Person(BaseModel):
