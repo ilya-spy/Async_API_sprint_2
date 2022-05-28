@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from models import helpers
+import helpers
 
 
 class PersonFilm(BaseModel):
@@ -11,12 +11,16 @@ class PersonFilm(BaseModel):
     role: str
     title: str
 
+    class Config:
+        json_loads = helpers.json_loads
+        json_dumps = helpers.json_dumps
+
 
 class Person(BaseModel):
     """Модель персоны."""
     id: UUID
     full_name: str
-    films: Optional[List[PersonFilm]]
+    films: Optional[list[PersonFilm]]
 
     class Config:
         json_loads = helpers.json_loads

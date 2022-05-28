@@ -100,8 +100,7 @@ class PgPersonToElasticSearch(BaseTransformer):
         """
         return [self.map(m) for m in messages]
 
-    @staticmethod
-    def map(message: Message) -> Message:
+    def map(self, message: Message) -> Message:
         """Преобразует модель бд в документ elasticsearch.
 
         :param message:
@@ -111,6 +110,14 @@ class PgPersonToElasticSearch(BaseTransformer):
         message.obj_model = person.Person(
             id=item.id,
             full_name=item.full_name,
-            films=[]
+            films=[self.map_film(f) for f in item.films]
         )
         return message
+
+    @staticmethod
+    def map_film(item: postgres.PersonFilm) -> person.PersonFilm:
+        return person.PersonFilm(
+            film_id=item.film_id,
+            role=item.role,
+            title=item.title,
+        )

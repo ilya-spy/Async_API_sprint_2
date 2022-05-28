@@ -59,6 +59,10 @@
           "role": {
             "type": "text",
             "analyzer": "ru_en"
+          },
+          "title": {
+            "type": "text",
+            "analyzer": "ru_en"
           }
         }
       }

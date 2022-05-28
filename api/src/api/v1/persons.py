@@ -1,16 +1,13 @@
-
 from http import HTTPStatus
 from typing import Union
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from models.film import Film
+from models.person import Person
+from services._search import SearchService
 from services.film import FilmService, get_film_service
 from services.person import get_person_service
-from services._search import SearchService
-
-from models.person import Person
-from models.film import Film
-
 
 router: APIRouter = APIRouter()
 

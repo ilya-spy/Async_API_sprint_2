@@ -1,11 +1,9 @@
-
-import logging
 import json
-
-from pydantic import BaseModel
+import logging
 from typing import Optional
 
 from aioredis import Redis
+from pydantic import BaseModel
 
 from etl import state
 

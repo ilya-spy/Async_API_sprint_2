@@ -1,12 +1,10 @@
-
 import logging
-
-from uuid import UUID
 from dataclasses import dataclass
 from typing import Optional
+from uuid import UUID
 
-from elasticsearch import AsyncElasticsearch, NotFoundError
 from aioredis import Redis
+from elasticsearch import AsyncElasticsearch, NotFoundError
 
 from services._cache import CacheAPI
 
@@ -60,7 +58,7 @@ class SearchAPI:
                 from_=cursor.offset,
                 size=cursor.size,
                 sort=SearchAPI.get_sort_query(cursor.sort))
-            self.logger.info('search: index=%s, query=%s, offset=%d, size=%d' % 
+            self.logger.info('search: index=%s, query=%s, offset=%d, size=%d' %
                              (self.index, query, cursor.offset, cursor.size))
         except NotFoundError:
             self.logger.exception("The requested index was not found")
@@ -103,7 +101,7 @@ class SearchAPI:
 
 
 class SearchService:
-    def __init__(self, index: str, model: object, 
+    def __init__(self, index: str, model: object,
                  redis: Redis, elastic: AsyncElasticsearch):
         self.index = index
         self.cacher = CacheAPI(index, redis)
@@ -123,7 +121,7 @@ class SearchService:
 
         # look in cache upfront
         if cached := await self.cacher.get_index(self.index, repr(cursor)):
-            self.logger.info("%s index get from cache: %s" 
+            self.logger.info("%s index get from cache: %s"
                              % (self.index, repr(cursor)))
             return cached
 
@@ -157,18 +155,18 @@ class SearchService:
 
         # look in cache upfront
         if cached := await self.cacher.get_index(
-            self.index,
-            repr('_'.join([repr(cursor), repr(match)]))
+                self.index,
+                repr('_'.join([repr(cursor), repr(match)]))
         ):
             self.logger.info(
-                "%s index get from cache: %s" 
+                "%s index get from cache: %s"
                 % (self.index, repr('_'.join([cursor, match]))))
             return cached
 
         # search for field matches in elastic
         resp = await self.searcher.match_field(cursor, match)
 
-        converted = [self.model(**entry['_source']) 
+        converted = [self.model(**entry['_source'])
                      for entry in (resp if resp else [])]
         self.logger.info(
             f"Fetched and converted {len(converted)} {self.index} elastic docs")

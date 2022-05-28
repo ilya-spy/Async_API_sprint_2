@@ -22,6 +22,7 @@ class RoleEnum(str, Enum):
 class PersonFilm(BaseModel):
     film_id: UUID
     role: str
+    title: str
 
 
 class Person(BaseModel):
