@@ -1,8 +1,7 @@
-
 import asyncio
 import logging
-import signal
 import os
+import signal
 from dataclasses import dataclass
 
 import aioredis
@@ -55,12 +54,9 @@ class App:
             for s in signals:
                 loop.add_signal_handler(s, lambda s=s: asyncio.create_task(self.shutdown(s, loop)))
 
-        storage = state.RedisStorage(redis=await redis.get_redis(), name=config.ETL_STORAGE_STATE_KEY)
-        state_obj = state.State(storage)
-
         tasks = []
         for build_pipeline in self.pipelines_builders:
-            pipe = await build_pipeline(state_obj)
+            pipe = await build_pipeline()
             task = loop.create_task(pipe.execute())
             tasks.append(task)
 
@@ -70,8 +66,11 @@ class App:
             await self.shutdown(signal.SIGINT, loop)
 
 
-async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
+async def build_genre_index_pipeline() -> pipeline.Pipeline:
     logger = logging.getLogger().getChild('GenreIndexPipeline')
+
+    storage = state.RedisStorage(redis=await redis.get_redis(), name='genre_index_pipeline')
+    state_obj = state.State(storage)
 
     enricher = enrichers.GenreEnricher(
         db=await postgres.get_postgres(),
@@ -103,8 +102,11 @@ async def build_genre_index_pipeline(state_obj: state.State) -> pipeline.Pipelin
     )
 
 
-async def build_person_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
+async def build_person_index_pipeline() -> pipeline.Pipeline:
     logger = logging.getLogger().getChild('PersonIndexPipeline')
+
+    storage = state.RedisStorage(redis=await redis.get_redis(), name='person_index_pipeline')
+    state_obj = state.State(storage)
 
     enricher = enrichers.PersonEnricher(
         db=await postgres.get_postgres(),
@@ -136,8 +138,11 @@ async def build_person_index_pipeline(state_obj: state.State) -> pipeline.Pipeli
     )
 
 
-async def build_film_index_pipeline(state_obj: state.State) -> pipeline.Pipeline:
+async def build_film_index_pipeline() -> pipeline.Pipeline:
     logger = logging.getLogger().getChild('FilmIndexPipeline')
+
+    storage = state.RedisStorage(redis=await redis.get_redis(), name='film_index_pipeline')
+    state_obj = state.State(storage)
 
     enricher = enrichers.FilmEnricher(
         db=await postgres.get_postgres(),

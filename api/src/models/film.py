@@ -3,7 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from models import genre, helpers, person
+import helpers
+from models import genre, person
 
 
 class Film(BaseModel):

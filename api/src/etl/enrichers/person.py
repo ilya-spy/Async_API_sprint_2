@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from asyncpg.connection import Connection
 from pydantic import BaseModel
 
-from etl.entities import Person, Message
+from etl.entities import Message, Person
+
 from .base import BaseEnricher
 
 
@@ -21,9 +22,22 @@ class PersonEnricher(BaseEnricher):
         sql = '''
             SELECT
                 p.id,
-                p.full_name
+                p.full_name,
+                COALESCE (
+                    json_agg(
+                       DISTINCT jsonb_build_object(
+                           'film_id', fw.id,
+                           'role', pfw.role,
+                           'title', fw.title
+                       )
+                   ) FILTER (WHERE p.id is not null),
+                   '[]'
+                ) as films
             FROM content.person p
+            LEFT JOIN content.person_film_work pfw ON pfw.person_id =  p.id
+            LEFT JOIN content.film_work fw on fw.id = pfw.film_work_id
             WHERE p.id = ANY($1)
+            GROUP BY p.id
         '''
 
         ids = [m.obj_id for m in messages]

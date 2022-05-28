@@ -1,5 +1,3 @@
-
-
 from functools import lru_cache
 
 from aioredis import Redis
@@ -8,9 +6,8 @@ from fastapi import Depends
 
 from db.elastic import get_elastic
 from db.redis import get_redis
-
-from services._search import SearchService
 from models.genre import Genre
+from services._search import SearchService
 
 
 # get_genre_service — это провайдер GenreService.

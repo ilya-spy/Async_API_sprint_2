@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from models import helpers
+import helpers
 
 
 class Genre(BaseModel):
