@@ -9,6 +9,7 @@ from models import helpers
 class PersonFilm(BaseModel):
     film_id: UUID
     role: str
+    title: str
 
 
 class Person(BaseModel):

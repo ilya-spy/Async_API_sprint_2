@@ -13,7 +13,7 @@ from models.genre import Genre
 router: APIRouter = APIRouter()
 
 
-@router.get('/')
+@router.get('/', response_model=list[Genre])
 async def get_genres(
             sort: Union[str, None] = Query(default=None, max_length=50),
             page_size: Union[int, None] = Query(default=50, alias='page[size]'),
@@ -36,7 +36,7 @@ async def get_genres(
     return result
 
 
-@router.get('/search')
+@router.get('/search', response_model=list[Genre])
 async def search_genres(
             sort: Union[str, None] = Query(default=None, max_length=50),
             page_size: Union[int, None] = Query(default=50, alias='page[size]'),

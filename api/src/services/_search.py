@@ -20,8 +20,7 @@ class SearchCursor:
         self.offset = (self.page - 1) * self.size if self.page > 0 else 0
 
     def __repr__(self):
-        return repr(
-        f'SearchCursor::page={self.page},size={self.size},sort={self.sort}')
+        return f'SearchCursor::page={self.page},size={self.size},sort={self.sort}'
 
 
 @dataclass
@@ -31,8 +30,7 @@ class SearchFilter:
     filter: Optional[str]
 
     def __repr__(self):
-        return repr(
-        f'SearchFilter::field={self.field},query={self.query},filter={self.filter}')
+        return f'SearchFilter::field={self.field},query={self.query},filter={self.filter}'
 
 
 class SearchAPI:
@@ -102,15 +100,20 @@ class SearchAPI:
         return await self.search_index(query, cursor)
 
 
-    async def look_single(uuid: UUID) -> Optional[object]:
-        pass
+    async def look_single(self, uuid: UUID, model: object) -> Optional[object]:
+        try:
+            doc = await self.elastic.get(index=self.index, id=uuid)
+        except NotFoundError:
+            return None
+        return model(**doc['_source'])
+
 
 
 class SearchService:
     def __init__(self, index: str, model: object, 
                     redis: Redis, elastic: AsyncElasticsearch):
         self.index = index
-        self.cacher = CacheAPI(redis)
+        self.cacher = CacheAPI(index, redis)
         self.searcher = SearchAPI(index, elastic)
         self.logger = logging.getLogger(f"SearchService: {index}")
         self.model = model
@@ -129,7 +132,7 @@ class SearchService:
         # look in cache upfront
         if cached := await self.cacher.get_index(self.index, repr(cursor)):
             self.logger.info("%s index get from cache: %s" 
-                % (self.index, repr(SearchCursor(page, size, sort))))
+                % (self.index, repr(cursor)))
             return cached
 
         # search all from elastic and convert
@@ -139,11 +142,9 @@ class SearchService:
         self.logger.info(f"Fetched and converted {len(converted)} {self.index} elastic docs")
 
         # put page to cache
-        await self.cacher.put_index(self.index, cursor,
-            map(lambda o: asdict(o), converted)
-        )
+        await self.cacher.put_index(self.index, repr(cursor), converted)
         self.logger.info("%s index put as key: %s"
-            % (self.index, repr(SearchCursor(page, size, sort))))
+            % (self.index, repr(cursor)))
 
         return converted
 
@@ -182,8 +183,23 @@ class SearchService:
         if len(converted):
             await self.cacher.put_index(self.index,
                                 repr('_'.join([repr(cursor), repr(match)])),
-                                map(lambda o: asdict(o), converted))
+                                list(map(lambda o: o.json(), converted)))
             self.logger.info("%s index put as key: %s"
                 % (self.index, repr(SearchCursor(page, size, sort))))
 
         return converted
+
+
+    async def get_single(self, uuid: UUID, model: object):
+       # look in cache upfront
+        if cached := await self.cacher.get_single(uuid):
+            self.logger.info("%s id record get from cache: %s"
+                % (self.index, cached))
+            return model(**cached)
+
+        result = await self.searcher.look_single(uuid, model)
+        self.logger.info("got result search: " + str(result))
+        if result:
+            await self.cacher.put_single(uuid, result)
+            self.logger.info("object cached as key: %s" % uuid)
+        return result
