@@ -160,7 +160,7 @@ class SearchService:
         ):
             self.logger.info(
                 "%s index get from cache: %s"
-                % (self.index, repr('_'.join([cursor, match]))))
+                % (self.index, repr('_'.join([repr(cursor), repr(match)]))))
             return cached
 
         # search for field matches in elastic
@@ -176,7 +176,7 @@ class SearchService:
             await self.cacher.put_index(
                 self.index,
                 repr('_'.join([repr(cursor), repr(match)])),
-                list(map(lambda o: o.json(), converted)))
+                list(map(lambda o: o.dict(), converted)))
             self.logger.info("%s index put as key: %s"
                              % (self.index, repr(SearchCursor(page, size, sort))))
 
