@@ -1,11 +1,13 @@
+
 from http import HTTPStatus
 from typing import Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Depends, Query
 
-from models.genre import Genre
-from services._search import SearchService
 from services.genre import get_genre_service
+from services._search import SearchService
+from api.v1.schemes.genre import Genre
+from api.v1.schemes.converter import GenreConverter
 
 router: APIRouter = APIRouter()
 
@@ -30,7 +32,7 @@ async def get_genres(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Genres list not available'
         )
-    return result
+    return [GenreConverter.convert(gnr) for gnr in result]
 
 
 @router.get('/search', response_model=list[Genre])
@@ -56,4 +58,4 @@ async def search_genres(
             status_code=HTTPStatus.NOT_FOUND,
             detail="Genres list query '%s' not available" % query
         )
-    return result
+    return [GenreConverter.convert(gnr) for gnr in result]
