@@ -1,18 +1,23 @@
-from typing import Optional
 import logging
+from typing import Optional
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
 from models.film import Film
 
-ELASTIC_INDEX = "movies"
+ELASTIC_INDEX = "films"
 ELASTIC_SEARCH_FIELDS = ['title', 'description']
 
 
 class FilmElasticService:
-    def __init__(self, elastic: AsyncElasticsearch):
+    def __init__(
+            self,
+            elastic: AsyncElasticsearch,
+            index: str = ELASTIC_INDEX
+    ):
         self._elastic = elastic
         self.logger = logging.getLogger("FilmElasticService")
+        self.index = index
 
     async def get_one(self, film_id: str) -> Optional[Film]:
         """
@@ -21,7 +26,7 @@ class FilmElasticService:
         @return:
         """
         try:
-            doc = await self._elastic.get(index=ELASTIC_INDEX, id=film_id)
+            doc = await self._elastic.get(index=self.index, id=film_id)
         except NotFoundError:
             self.logger.exception("")
             return None
@@ -53,7 +58,7 @@ class FilmElasticService:
         }
         try:
             resp = await self._elastic.search(
-                index=ELASTIC_INDEX,
+                index=self.index,
                 body={
                     "query": matching
                 },
@@ -87,16 +92,23 @@ class FilmElasticService:
         """
         # If we're going to show more than 10k, we should use 'search_after'
         query = {
-            "bool": {
-                "must": {
-                    "match": {"genre.id": genre_id}}
+            "nested": {
+                "path": "genre",
+                "query": {
+                    "match": {
+                        "genre.id": {
+                            "query": genre_id,
+                        },
+                    },
+                },
             },
         } if genre_id else {'match_all': {}}
+
         try:
             resp = await self._elastic.search(
-                index=ELASTIC_INDEX,
+                index=self.index,
                 body={
-                    "query": query
+                    "query": query,
                 },
                 from_=offset,
                 size=size,

@@ -41,7 +41,7 @@ async def search_films(
             status_code=HTTPStatus.NOT_FOUND,
             detail='films not found'
         )
-    return [FilmBaseConverter.conver(flm) for flm in result]
+    return [FilmBaseConverter.convert(flm) for flm in result]
 
 
 @router.get('/{film_id}/', response_model=Film)
@@ -94,4 +94,4 @@ async def films(
             status_code=HTTPStatus.NOT_FOUND,
             detail='films not found'
         )
-    return [FilmBaseConverter.conver(flm) for flm in result]
+    return [FilmBaseConverter.convert(flm) for flm in result]

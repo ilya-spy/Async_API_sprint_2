@@ -9,6 +9,8 @@ from fastapi import Depends
 from db.elastic import get_elastic
 from db.redis import get_redis
 from models.film import Film
+from services.film_cache import FilmCacheService
+from services.film_elastic import FilmElasticService
 
 DEFAULT_PAGE = 1
 DEFAULT_PAGE_SIZE = 50
@@ -29,8 +31,8 @@ def convert(page_id: Optional[int], page_size: Optional[int]) -> Offset:
 
 class FilmService:
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch, index: str):
-        self.redis = redis
-        self.elastic = elastic
+        self._cache = FilmCacheService(redis)
+        self._elastic = FilmElasticService(elastic, index)
         self.index = index
         self._log = logging.getLogger("FilmService")
 
@@ -117,7 +119,6 @@ class FilmService:
 @lru_cache()
 def get_film_service(
         redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
-        index: str = 'films',
+        elastic: AsyncElasticsearch = Depends(get_elastic)
 ) -> FilmService:
-    return FilmService(redis, elastic, index)
+    return FilmService(redis, elastic, 'films')
