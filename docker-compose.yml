@@ -71,6 +71,7 @@ services:
     build:
       context: elastic
     environment:
+      - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
       - 'discovery.type=single-node'
       - 'xpack.security.enabled=false'
     expose:
