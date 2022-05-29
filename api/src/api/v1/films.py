@@ -71,7 +71,7 @@ async def film_details(
 
 @router.get("/")
 async def films(
-        sort: str | None = Query(default=None, max_length=50),
+        sort: str = Query(default=None, max_length=50),
         pg_size: int = Query(default=50, alias="page[size]"),
         pg_number: int = Query(default=1, alias="page[number]"),
         fltr: Union[UUID, None] = Query(
