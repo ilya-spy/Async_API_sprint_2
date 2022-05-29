@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.v1.schemes.converter import PersonConverter
 from api.v1.schemes.person import Person
-from models.person import Person as PersonModel
 from services._search import SearchService
 from services.person import get_person_service
 
