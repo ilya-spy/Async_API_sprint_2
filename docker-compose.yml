@@ -14,6 +14,10 @@ services:
       - APP_HOST=${API_HOST}
       - APP_PORT=${API_PORT}
       - DEBUG
+    expose:
+      - "${API_PORT}"
+    ports:
+      - "127.0.0.1:8001:${API_PORT}"
     volumes:
       - ./api:/app
 
@@ -58,8 +62,10 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    expose:
+      - "${DB_PORT}"
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:${DB_PORT}"
 
   elastic:
     build:
@@ -67,13 +73,17 @@ services:
     environment:
       - 'discovery.type=single-node'
       - 'xpack.security.enabled=false'
+    expose:
+      - "${ELASTIC_PORT}"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:${ELASTIC_PORT}"
 
   redis:
     image: redis:7.0.0-alpine
+    expose:
+      - "${REDIS_PORT}"
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:${REDIS_PORT}"
 
   nginx:
     image: nginx:1.19.2
@@ -86,5 +96,6 @@ services:
       - api
     ports:
       - "80:80"
+
 volumes:
   admin-panel-static:
