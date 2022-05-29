@@ -19,7 +19,7 @@ class CacheAPI:
         self.logger = logging.getLogger("CacheAPI: " + index)
         self.storage = state.RedisStorage(self.redis, name=self.index)
 
-    async def sync_state(self) -> Optional[dict]:
+    async def sync_state(self):
         try:
             self.state = await self.storage.retrieve_state()
         except Exception:

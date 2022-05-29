@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from models.person import Person, PersonFilm
 from services._search import SearchService
-from services.film import FilmService, get_film_service
+from services.film import get_film_service
 from services.person import get_person_service
 
 router: APIRouter = APIRouter()
@@ -72,7 +72,8 @@ async def person_details(person_uuid: str, service: SearchService = Depends(get_
 async def person_films(
         person_uuid: str,
         service: SearchService = Depends(get_person_service),
-        filmService: FilmService = Depends(get_film_service)) -> list[PersonFilm]:
+        _filmService: SearchService = Depends(get_film_service)
+) -> list[PersonFilm]:
     person: Person = await service.get_single(person_uuid, Person)
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Person uuid not found')
