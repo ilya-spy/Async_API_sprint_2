@@ -3,9 +3,10 @@ from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from models.person import Person, PersonFilm
+from api.v1.schemes.converter import PersonConverter
+from api.v1.schemes.person import Person
+from models.person import Person as PersonModel
 from services._search import SearchService
-from services.film import get_film_service
 from services.person import get_person_service
 
 router: APIRouter = APIRouter()
@@ -31,7 +32,7 @@ async def get_persons(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Persons list not available'
         )
-    return result
+    return [PersonConverter.convert(person) for person in result]
 
 
 @router.get('/search', response_model=list[Person])
@@ -57,25 +58,12 @@ async def search_persons(
             status_code=HTTPStatus.NOT_FOUND,
             detail="Persons list query '%s' not available" % query
         )
-    return result
+    return [PersonConverter.convert(person) for person in result]
 
 
 @router.get('/{person_uuid}', response_model=Person)
 async def person_details(person_uuid: str, service: SearchService = Depends(get_person_service)) -> Person:
-    person = await service.get_single(person_uuid, Person)
+    person = await service.get_single(person_uuid)
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Person uuid not found')
-    return person
-
-
-@router.get('/{person_uuid}/films', response_model=list[PersonFilm])
-async def person_films(
-        person_uuid: str,
-        service: SearchService = Depends(get_person_service),
-        _filmService: SearchService = Depends(get_film_service)
-) -> list[PersonFilm]:
-    person: Person = await service.get_single(person_uuid, Person)
-    if not person:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Person uuid not found')
-
-    return person.films
+    return PersonConverter.convert(person)

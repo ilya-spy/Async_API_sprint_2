@@ -153,7 +153,7 @@ class SearchService:
         if cached := await self.cacher.get_index(self.index, repr(cursor)):
             self.logger.info("%s index get from cache: %s"
                              % (self.index, repr(cursor)))
-            return cached
+            return [self.model(**c) for c in cached]
 
         # search all from elastic and convert
         resp = await self.searcher.list_index(cursor)

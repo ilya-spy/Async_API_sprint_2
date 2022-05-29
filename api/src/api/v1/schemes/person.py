@@ -8,8 +8,13 @@ class PersonBase(BaseModel):
     full_name: str
 
 
+class PersonFilm(BaseModel):
+    film_uuid: UUID
+    role: str
+    title: str
+
+
 class Person(BaseModel):
     uuid: UUID
     full_name: str
-    role: str
-    film_ids: list[UUID]
+    films: list[PersonFilm]
