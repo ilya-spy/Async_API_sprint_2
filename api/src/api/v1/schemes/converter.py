@@ -1,9 +1,10 @@
+from api.v1.schemes.film import Film, FilmBase
+from api.v1.schemes.genre import Genre
+from api.v1.schemes.person import Person, PersonBase, PersonFilm
 from models.film import Film as FilmModel
 from models.genre import Genre as GenreModel
 from models.person import Person as PersonModel
-from api.v1.schemes.film import Film, FilmBase
-from api.v1.schemes.genre import Genre
-from api.v1.schemes.person import PersonBase
+from models.person import PersonFilm as PersonFilmModel
 
 
 class FilmBaseConverter:
@@ -49,4 +50,22 @@ class PersonBaseConverter:
         return PersonBase(
             uuid=model.id,
             full_name=model.full_name
+        )
+
+
+class PersonConverter:
+    @classmethod
+    def convert(cls, model: PersonModel) -> Person:
+        return Person(
+            uuid=model.id,
+            full_name=model.full_name,
+            films=[cls._convert_film(film) for film in model.films]
+        )
+
+    @staticmethod
+    def _convert_film(model: PersonFilmModel) -> PersonFilm:
+        return PersonFilm(
+            film_uuid=model.film_id,
+            role=model.role,
+            title=model.title,
         )
