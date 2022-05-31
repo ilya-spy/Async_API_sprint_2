@@ -58,8 +58,6 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "5432:5432"
 
   elastic:
     build:
@@ -67,13 +65,9 @@ services:
     environment:
       - 'discovery.type=single-node'
       - 'xpack.security.enabled=false'
-    ports:
-      - "9200:9200"
 
   redis:
     image: redis:7.0.0-alpine
-    ports:
-      - "6379:6379"
 
   nginx:
     image: nginx:1.19.2
