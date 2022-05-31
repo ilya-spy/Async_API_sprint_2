@@ -1,4 +1,4 @@
 .PHONY: run
 run:
-	PYTHONPATH='/app/src/' gunicorn -c src/core/gunicorn.py main:app
+	PYTHONPATH=$(shell pwd)/src gunicorn -c $(shell pwd)/src/core/gunicorn.py main:app
 
