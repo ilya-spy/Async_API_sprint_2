@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from etl.state import State
+import orjson
+
+from state import State
 
 
 async def get_last_modified(state: State, key: str) -> datetime:
@@ -12,3 +14,16 @@ async def get_last_modified(state: State, key: str) -> datetime:
     """
     modified = await state.retrieve_state(key)
     return datetime.fromisoformat(modified) if modified else datetime.min.replace(tzinfo=timezone.utc)
+
+
+json_loads = orjson.loads
+
+
+def json_dumps(v, *, default):
+    """
+    orjson.dumps возвращает bytes, а pydantic требует unicode, поэтому декодируем
+    :param v:
+    :param default:
+    :return:
+    """
+    return orjson.dumps(v, default=default).decode()

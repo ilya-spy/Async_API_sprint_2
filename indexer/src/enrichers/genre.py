@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from asyncpg.connection import Connection
+from entities.genre import Genre
+from message import Message
 from pydantic import BaseModel
-
-from etl.entities import Genre, Message
 
 from .base import BaseEnricher
 

@@ -2,10 +2,10 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from etl.enrichers import BaseEnricher
-from etl.loaders import BaseLoader
-from etl.producers import BaseProducer
-from etl.utils import backoff
+from enrichers import BaseEnricher
+from loaders import BaseLoader
+from producers import BaseProducer
+from utils import backoff
 
 
 @dataclass

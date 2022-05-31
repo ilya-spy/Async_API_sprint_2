@@ -1,0 +1,6 @@
+from .base import BaseProducer
+from .filmwork_genre_modified import FilmworkGenreModifiedProducer
+from .filmwork_modified import FilmworkModifiedProducer
+from .filmwork_person_modified import FilmworkPersonModifiedProducer
+from .genre_modified import GenreModifiedProducer
+from .person_modified import PersonModifiedProducer

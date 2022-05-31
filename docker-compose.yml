@@ -19,7 +19,7 @@ services:
 
   indexer:
     build:
-      context: api
+      context: indexer
     depends_on:
       - postgres
       - elastic
@@ -35,8 +35,7 @@ services:
       - DB_PASSWORD
       - DEBUG
     volumes:
-      - ./api:/app
-    command: make index
+      - ./indexer:/app
 
   admin-panel:
     image: agorobets/admin-panel:latest

@@ -4,10 +4,9 @@ from asyncio import Queue
 from dataclasses import dataclass, field
 
 from asyncpg.connection import Connection
-from pydantic import BaseModel
-
 from db import postgres
-from etl.entities import Message
+from message import Message
+from pydantic import BaseModel
 
 
 @dataclass

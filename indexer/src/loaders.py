@@ -1,4 +1,3 @@
-
 import logging
 from abc import ABCMeta, abstractmethod
 from asyncio import Queue
@@ -10,10 +9,10 @@ from typing import Generator
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
-from etl.entities import Message
-from etl.helpers import get_last_modified
-from etl.state import State
-from etl.transformers import BaseTransformer
+from helpers import get_last_modified
+from message import Message
+from state import State
+from transformers import BaseTransformer
 
 
 @dataclass
@@ -31,7 +30,7 @@ class BaseLoader(metaclass=ABCMeta):
 
 
 @dataclass
-class ElasticIndex(BaseLoader):
+class ElasticIndexLoader(BaseLoader):
     """Загрузчик фильмов в elasticsearch."""
 
     elastic: AsyncElasticsearch
@@ -78,12 +77,14 @@ class ElasticIndex(BaseLoader):
             self.logger.debug('Failed to bulk load, Exception: ' + str(e))
             failed = len(messages)
         finally:
-            self.logger.debug(f'Got {success}/{failed} response for bulk index')
+            self.logger.debug(
+                f'Got {success}/{failed} response for bulk index')
             if failed:
                 raise Exception('Got failed items on elastic bulk insert')
 
         await self._update_last_modified(transformed_messages)
-        self._loaded_counter.update([msg.producer_name for msg in transformed_messages])
+        self._loaded_counter.update(
+            [msg.producer_name for msg in transformed_messages])
 
     async def _update_last_modified(self, messages: list[Message]) -> None:
         """Для каждого типа продьюсеров нужно отдельно апдейтить last_modified.
@@ -102,7 +103,8 @@ class ElasticIndex(BaseLoader):
             )
 
             last_modified = await get_last_modified(self.state, name)
-            last_modified = max(last_modified, message_with_max_modified.obj_modified)
+            last_modified = max(
+                last_modified, message_with_max_modified.obj_modified)
 
             await self.state.save_state(name, last_modified.isoformat())
 

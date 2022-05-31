@@ -7,9 +7,16 @@ from dataclasses import dataclass
 import aioredis
 from elasticsearch import AsyncElasticsearch
 
+import state
 from core import config
 from db import elastic, postgres, redis
-from etl import enrichers, loaders, pipeline, producers, state, transformers
+from enrichers import FilmEnricher, GenreEnricher, PersonEnricher
+from loaders import ElasticIndexLoader
+from pipeline import Pipeline
+from producers import (FilmworkGenreModifiedProducer, FilmworkModifiedProducer,
+                       FilmworkPersonModifiedProducer, GenreModifiedProducer,
+                       PersonModifiedProducer)
+from transformers import FilmTransformer, GenreTransformer, PersonTransformer
 
 
 @dataclass
@@ -21,7 +28,8 @@ class App:
 
     @staticmethod
     def startup():
-        redis.redis = aioredis.from_url(f'redis://{config.REDIS_HOST}:{config.REDIS_PORT}')
+        redis.redis = aioredis.from_url(
+            f'redis://{config.REDIS_HOST}:{config.REDIS_PORT}')
         elastic.es = AsyncElasticsearch(
             hosts=[f'{config.ELASTIC_SCHEME}://{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
         postgres.postgres = postgres.DB(dsn=config.PG_DSN)
@@ -52,7 +60,8 @@ class App:
         if os.name != 'nt':
             signals = (signal.SIGTERM, signal.SIGINT)
             for s in signals:
-                loop.add_signal_handler(s, lambda s=s: asyncio.create_task(self.shutdown(s, loop)))
+                loop.add_signal_handler(
+                    s, lambda s=s: asyncio.create_task(self.shutdown(s, loop)))
 
         tasks = []
         for build_pipeline in self.pipelines_builders:
@@ -66,29 +75,29 @@ class App:
             await self.shutdown(signal.SIGINT, loop)
 
 
-async def build_genre_index_pipeline() -> pipeline.Pipeline:
+async def build_genre_index_pipeline() -> Pipeline:
     logger = logging.getLogger().getChild('GenreIndexPipeline')
 
     storage = state.RedisStorage(redis=await redis.get_redis(), name='genre_index_pipeline')
     state_obj = state.State(storage)
 
-    enricher = enrichers.GenreEnricher(
+    enricher = GenreEnricher(
         db=await postgres.get_postgres(),
         logger=logger.getChild('GenreModifiedEnricher'),
         chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
     )
-    loader = loaders.ElasticIndex(
+    loader = ElasticIndexLoader(
         elastic=await elastic.get_elastic(),
-        transformer=transformers.PgGenreToElasticSearch(),
+        transformer=GenreTransformer(),
         index_name='genres',
         state=state_obj,
         logger=logger.getChild('GenreModifiedLoader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
     )
-    return pipeline.Pipeline(
+    return Pipeline(
         producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
         producers=[
-            producers.GenreModified(
+            GenreModifiedProducer(
                 db=await postgres.get_postgres(),
                 state=state_obj,
                 logger=logger.getChild('GenreModifiedProducer'),
@@ -102,29 +111,29 @@ async def build_genre_index_pipeline() -> pipeline.Pipeline:
     )
 
 
-async def build_person_index_pipeline() -> pipeline.Pipeline:
+async def build_person_index_pipeline() -> Pipeline:
     logger = logging.getLogger().getChild('PersonIndexPipeline')
 
     storage = state.RedisStorage(redis=await redis.get_redis(), name='person_index_pipeline')
     state_obj = state.State(storage)
 
-    enricher = enrichers.PersonEnricher(
+    enricher = PersonEnricher(
         db=await postgres.get_postgres(),
         logger=logger.getChild('PersonModifiedEnricher'),
         chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
     )
-    loader = loaders.ElasticIndex(
+    loader = ElasticIndexLoader(
         elastic=await elastic.get_elastic(),
-        transformer=transformers.PgPersonToElasticSearch(),
+        transformer=PersonTransformer(),
         index_name='persons',
         state=state_obj,
         logger=logger.getChild('PersonModifiedLoader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
     )
-    return pipeline.Pipeline(
+    return Pipeline(
         producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
         producers=[
-            producers.PersonModified(
+            PersonModifiedProducer(
                 db=await postgres.get_postgres(),
                 state=state_obj,
                 logger=logger.getChild('PersonModifiedProducer'),
@@ -138,43 +147,43 @@ async def build_person_index_pipeline() -> pipeline.Pipeline:
     )
 
 
-async def build_film_index_pipeline() -> pipeline.Pipeline:
+async def build_film_index_pipeline() -> Pipeline:
     logger = logging.getLogger().getChild('FilmIndexPipeline')
 
     storage = state.RedisStorage(redis=await redis.get_redis(), name='film_index_pipeline')
     state_obj = state.State(storage)
 
-    enricher = enrichers.FilmEnricher(
+    enricher = FilmEnricher(
         db=await postgres.get_postgres(),
         logger=logger.getChild('FilmworkEnricher'),
         chunk_size=config.ETL_ENRICHER_CHUNK_SIZE,
     )
-    loader = loaders.ElasticIndex(
+    loader = ElasticIndexLoader(
         elastic=await elastic.get_elastic(),
-        transformer=transformers.PgFilmToElasticSearch(),
+        transformer=FilmTransformer(),
         index_name='films',
         state=state_obj,
         logger=logger.getChild('FilmworkLoader'),
         chunk_size=config.ETL_LOADER_CHUNK_SIZE,
     )
-    return pipeline.Pipeline(
+    return Pipeline(
         producer_queue_size=config.ETL_PRODUCER_QUEUE_SIZE,
         producers=[
-            producers.FilmworkPersonModified(
+            FilmworkPersonModifiedProducer(
                 db=await postgres.get_postgres(),
                 state=state_obj,
                 logger=logger.getChild('FilmworkPersonModifiedProducer'),
                 chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
                 check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
             ),
-            producers.FilmworkGenreModified(
+            FilmworkGenreModifiedProducer(
                 db=await postgres.get_postgres(),
                 state=state_obj,
                 logger=logger.getChild('FilmworkGenreModifiedProducer'),
                 chunk_size=config.ETL_PRODUCER_CHUNK_SIZE,
                 check_interval=config.ETL_PRODUCER_CHECK_INTERVAL,
             ),
-            producers.FilmworkModified(
+            FilmworkModifiedProducer(
                 db=await postgres.get_postgres(),
                 state=state_obj,
                 logger=logger.getChild('FilmworkModifiedProducer'),
