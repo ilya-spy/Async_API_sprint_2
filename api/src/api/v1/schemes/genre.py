@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from utils.model_json import BaseOrJsonModel
 
 
-class Genre(BaseModel):
+class Genre(BaseOrJsonModel):
     uuid: UUID
     name: str

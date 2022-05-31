@@ -1,18 +1,17 @@
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from api.v1.schemes.genre import Genre
 from api.v1.schemes.person import PersonBase
+from utils.model_json import BaseOrJsonModel
 
 
-class FilmBase(BaseModel):
+class FilmBase(BaseOrJsonModel):
     uuid: UUID
     title: str
     imdb_rating: float
 
 
-class Film(BaseModel):
+class Film(BaseOrJsonModel):
     uuid: UUID
     title: str
     imdb_rating: float
