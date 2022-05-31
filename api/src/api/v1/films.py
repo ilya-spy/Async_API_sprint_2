@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from api.v1.errors import FilmErrors
 from api.v1.schemes.converter import FilmBaseConverter, FilmConverter
 from api.v1.schemes.film import Film, FilmBase
 from services._search import SearchService
@@ -43,7 +44,7 @@ async def search_films(
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='films not found'
+            detail=FilmErrors.SEARCH_WO_RESULTS.substitute(query=query)
         )
     return [FilmBaseConverter.convert(flm) for flm in result]
 
@@ -64,7 +65,7 @@ async def film_details(
     if not film:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='film not found'
+            detail=FilmErrors.NO_SUCH_ID
         )
     return FilmConverter.convert(film)
 
@@ -102,6 +103,6 @@ async def films(
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='films not found'
+            detail=FilmErrors.FILMS_NOT_FOUND
         )
     return [FilmBaseConverter.convert(flm) for flm in result]

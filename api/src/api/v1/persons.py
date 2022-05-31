@@ -3,6 +3,7 @@ from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from api.v1.errors import PersonErrors
 from api.v1.schemes.converter import PersonConverter
 from api.v1.schemes.person import Person
 from services._search import SearchService
@@ -29,7 +30,7 @@ async def get_persons(
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='Persons list not available'
+            detail=PersonErrors.PERSONS_NOT_FOUND
         )
     return [PersonConverter.convert(person) for person in result]
 
@@ -55,7 +56,7 @@ async def search_persons(
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail="Persons list query '%s' not available" % query
+            detail=PersonErrors.SEARCH_WO_RESULTS.substitute(query=query)
         )
     return [PersonConverter.convert(person) for person in result]
 
@@ -64,5 +65,8 @@ async def search_persons(
 async def person_details(person_uuid: str, service: SearchService = Depends(get_person_service)) -> Person:
     person = await service.get_single(person_uuid)
     if not person:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Person uuid not found')
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=PersonErrors.NO_SUCH_ID
+        )
     return PersonConverter.convert(person)
