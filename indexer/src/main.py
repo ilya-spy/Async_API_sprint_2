@@ -13,9 +13,13 @@ from db import elastic, postgres, redis
 from enrichers import FilmEnricher, GenreEnricher, PersonEnricher
 from loaders import ElasticIndexLoader
 from pipeline import Pipeline
-from producers import (FilmworkGenreModifiedProducer, FilmworkModifiedProducer,
-                       FilmworkPersonModifiedProducer, GenreModifiedProducer,
-                       PersonModifiedProducer)
+from producers import (
+    FilmworkGenreModifiedProducer,
+    FilmworkModifiedProducer,
+    FilmworkPersonModifiedProducer,
+    GenreModifiedProducer,
+    PersonModifiedProducer,
+)
 from transformers import FilmTransformer, GenreTransformer, PersonTransformer
 
 

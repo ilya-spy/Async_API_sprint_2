@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
 from asyncpg.connection import Connection
+from pydantic import BaseModel
+
 from entities.film import Film
 from message import Message
-from pydantic import BaseModel
 
 from .base import BaseEnricher
 

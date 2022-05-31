@@ -3,7 +3,6 @@ from documents.person import PersonFilm as PersonFilmDocument
 from entities.person import Person as PersonEntity
 from entities.person import PersonFilm as PersonFilmEntity
 from message import Message
-
 from transformers.base import BaseTransformer
 
 
