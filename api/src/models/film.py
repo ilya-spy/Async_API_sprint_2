@@ -1,24 +1,17 @@
-from typing import List
 from uuid import UUID
 
-from pydantic import BaseModel
-
-import helpers
 from models import genre, person
+from utils.model_json import BaseOrJsonModel
 
 
-class Film(BaseModel):
+class Film(BaseOrJsonModel):
     """Модель фильма."""
     id: UUID
     type: str
     title: str
     description: str
     imdb_rating: float
-    genre: List[genre.Genre]
-    actors: List[person.Person]
-    writers: List[person.Person]
-    directors: List[person.Person]
-
-    class Config:
-        json_loads = helpers.json_loads
-        json_dumps = helpers.json_dumps
+    genre: list[genre.Genre]
+    actors: list[person.Person]
+    writers: list[person.Person]
+    directors: list[person.Person]
