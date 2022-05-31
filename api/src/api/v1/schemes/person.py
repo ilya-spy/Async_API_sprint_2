@@ -1,20 +1,20 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from utils.model_json import BaseOrJsonModel
 
 
-class PersonBase(BaseModel):
+class PersonBase(BaseOrJsonModel):
     uuid: UUID
     full_name: str
 
 
-class PersonFilm(BaseModel):
+class PersonFilm(BaseOrJsonModel):
     film_uuid: UUID
     role: str
     title: str
 
 
-class Person(BaseModel):
+class Person(BaseOrJsonModel):
     uuid: UUID
     full_name: str
     films: list[PersonFilm]

@@ -1,15 +1,9 @@
 from uuid import UUID
 
-from pydantic import BaseModel
-
-import helpers
+from utils.model_json import BaseOrJsonModel
 
 
-class Genre(BaseModel):
+class Genre(BaseOrJsonModel):
     """Модель жанра."""
     id: UUID
     name: str
-
-    class Config:
-        json_loads = helpers.json_loads
-        json_dumps = helpers.json_dumps
