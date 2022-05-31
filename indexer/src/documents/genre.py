@@ -1,7 +1,8 @@
 from uuid import UUID
 
-import helpers
 from pydantic import BaseModel
+
+import helpers
 
 
 class Genre(BaseModel):

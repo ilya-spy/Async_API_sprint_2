@@ -1,3 +1,4 @@
 .PHONY: run
 run:
-	python src/main.py
+	PYTHONPATH='/app/src/' gunicorn -c src/core/gunicorn.py main:app
+

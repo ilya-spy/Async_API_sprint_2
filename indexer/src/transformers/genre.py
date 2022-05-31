@@ -1,7 +1,6 @@
 from documents.genre import Genre as GenreDocument
 from entities.genre import Genre as GenreEntity
 from message import Message
-
 from transformers.base import BaseTransformer
 
 

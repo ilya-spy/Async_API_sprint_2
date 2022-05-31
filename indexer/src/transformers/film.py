@@ -5,7 +5,6 @@ from entities.film import Film as FilmEntity
 from entities.person import Person as PersonEntity
 from entities.person import RoleEnum
 from message import Message
-
 from transformers.base import BaseTransformer
 
 

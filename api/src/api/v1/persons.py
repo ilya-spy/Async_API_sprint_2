@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Union
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -61,8 +62,8 @@ async def search_persons(
 
 
 @router.get('/{person_uuid}', response_model=Person)
-async def person_details(person_uuid: str, service: SearchService = Depends(get_person_service)) -> Person:
-    person = await service.get_single(person_uuid)
+async def person_details(person_uuid: UUID, service: SearchService = Depends(get_person_service)) -> Person:
+    person = await service.get_single(str(person_uuid))
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Person uuid not found')
     return PersonConverter.convert(person)

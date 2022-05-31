@@ -50,7 +50,7 @@ if __name__ == '__main__':
         'main:app',
         host=config.APP_HOST,
         port=config.APP_PORT,
-        reload=config.APP_LIVE_RELOAD,
+        reload=config.DEBUG,
         log_config=LOGGING,
         log_level=logging.DEBUG,
     )
