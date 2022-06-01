@@ -1,5 +1,3 @@
-import multiprocessing
-
 from core.config import settings
 
 bind = f'{settings.APP_HOST}:{settings.APP_PORT}'

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Настройки Unicorn/FastAPI
     APP_HOST: str = '127.0.0.1'
     APP_PORT: int = 8000
-    APP_WORKERS: int =  multiprocessing.cpu_count() * 2 + 1
+    APP_WORKERS: int = multiprocessing.cpu_count() * 2 + 1
     APP_WORKERS_CLASS: str = 'uvicorn.workers.UvicornWorker'
 
     # Настройки Redis

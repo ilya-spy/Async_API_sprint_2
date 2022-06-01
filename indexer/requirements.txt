@@ -3,5 +3,6 @@ flake8-bandit==3.0.0
 bandit==1.7.4
 aioredis==2.0.1
 elasticsearch[async]==8.2.0
+orjson==3.6.8
 pydantic==1.9.0
 asyncpg==0.25.0

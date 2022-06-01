@@ -26,7 +26,9 @@ async def startup():
     :return:
     """
     redis.redis = aioredis.from_url(f'redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
-    elastic.es = AsyncElasticsearch(hosts=[f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'])
+    elastic.es = AsyncElasticsearch(
+        hosts=[f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}']
+    )
 
 
 @app.on_event('shutdown')
