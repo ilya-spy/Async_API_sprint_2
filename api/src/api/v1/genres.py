@@ -3,6 +3,7 @@ from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from api.v1.errors import GenreErrors
 from api.v1.schemes.converter import GenreConverter
 from api.v1.schemes.genre import Genre
 from services._search import SearchService
@@ -29,7 +30,7 @@ async def get_genres(
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail='Genres list not available'
+            detail=GenreErrors.GENRES_NOT_FOUND
         )
     return [GenreConverter.convert(gnr) for gnr in result]
 
@@ -55,6 +56,6 @@ async def search_genres(
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail="Genres list query '%s' not available" % query
+            detail=GenreErrors.SEARCH_WO_RESULTS.substitute(query=query)
         )
     return [GenreConverter.convert(gnr) for gnr in result]
