@@ -1,8 +1,8 @@
 import multiprocessing
 
-from core import config as cfg
+from core.config import settings
 
-bind = f'{cfg.APP_HOST}:{cfg.APP_PORT}'
-workers = multiprocessing.cpu_count() * 2 + 1
-reload = cfg.DEBUG
-worker_class = 'uvicorn.workers.UvicornWorker'
+bind = f'{settings.APP_HOST}:{settings.APP_PORT}'
+workers = settings.APP_WORKERS
+reload = settings.DEBUG
+worker_class = settings.APP_WORKERS_CLASS

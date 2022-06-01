@@ -1,43 +1,43 @@
 import logging
-import os
+from dataclasses import dataclass, field
 from logging import config as logging_config
 
 from core.logger import LOGGING
+from core.settings import Settings
 
-# Применяем настройки логирования
-logging_config.dictConfig(LOGGING)
-if os.environ.get('DEBUG'):
-    logging.info('Enabling debug logging...')
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
 
-# Настройки Redis
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+@dataclass
+class Config:
+    """Класс содержит функции начального конфигурирования приложения по настройкам"""
+    settings: Settings
+    postgres_dsn: dict = field(default=None)
 
-# Настройки Elasticsearch
-ELASTIC_SCHEME = os.getenv('ELASTIC_SCHEME', 'http')
-ELASTIC_HOST = os.getenv('ELASTIC_HOST', '127.0.0.1')
-ELASTIC_PORT = int(os.getenv('ELASTIC_PORT', 9200))
+    def configure_logging(self):
+        logging_config.dictConfig(LOGGING)
+        if self.settings.DEBUG:
+            logging.info('Enabling debug logging...')
+            root = logging.getLogger()
+            root.setLevel(logging.DEBUG)
 
-# Натсройка Postgres
-PG_DSN = dict(
-    database=os.environ.get('DB_NAME'),
-    user=os.environ.get('DB_USER'),
-    password=os.environ.get('DB_PASSWORD'),
-    host=os.environ.get('DB_HOST', '127.0.0.1'),
-    port=os.environ.get('DB_PORT', 5432),
-    server_settings=dict(
-        search_path='public,content',
-    ),
-)
+    def configure_postgres(self):
+        self.postgres_dsn = dict(
+            database=self.settings.DB_NAME,
+            user=self.settings.DB_USER,
+            password=self.settings.DB_PASSWORD,
+            host=self.settings.DB_HOST,
+            port=self.settings.DB_PORT,
+            server_settings=dict(
+                search_path=f'public,{self.settings.DB_SCHEMA}',
+            ),
+        )
 
-# Настройка индексатора
-ETL_STORAGE_STATE_KEY = os.getenv('ETL_STORAGE_STATE_KEY', 'indexer')
-ETL_PRODUCER_CHUNK_SIZE = int(os.getenv('ETL_PRODUCER_CHUNK_SIZE', 500))
-ETL_PRODUCER_QUEUE_SIZE = int(os.getenv('ETL_PRODUCER_QUEUE_SIZE', 500))
-ETL_PRODUCER_CHECK_INTERVAL = int(os.getenv('ETL_PRODUCER_CHECK_INTERVAL', 10))
-ETL_LOADER_CHUNK_SIZE = int(os.getenv('ETL_LOADER_CHUNK_SIZE', 100))
-ETL_ENRICHER_MAX_BATCH_SIZE = int(
-    os.getenv('ETL_ENRICHER_MAX_BATCH_SIZE', 100))
-ETL_ENRICHER_CHUNK_SIZE = int(os.getenv('ETL_ENRICHER_CHUNK_SIZE', 100))
+    def __post_init__(self):
+        self.configure_logging()
+        self.configure_postgres()
+
+
+# Инстанциируем настройки окружения
+settings = Settings()
+
+# Конфигурируем приложение на основе полученных настроек
+config = Config(settings)
