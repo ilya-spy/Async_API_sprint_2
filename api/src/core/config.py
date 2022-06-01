@@ -1,32 +1,29 @@
 import logging
-import os
+from dataclasses import dataclass
 from logging import config as logging_config
 
 from core.logger import LOGGING
+from core.settings import Settings
 
-DEBUG = bool(os.environ.get('DEBUG', False))
 
-# Применяем настройки логирования
-logging_config.dictConfig(LOGGING)
-if DEBUG:
-    logging.info('Enabling debug logging...')
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
+@dataclass
+class Config:
+    """Класс содержит функции начального конфигурирования приложения по настройкам"""
+    settings: Settings
 
-# Название проекта. Используется в Swagger-документации
-PROJECT_NAME = os.getenv('PROJECT_NAME', 'movies')
+    def configure_logging(self):
+        logging_config.dictConfig(LOGGING)
+        if self.settings.DEBUG:
+            logging.info('Enabling debug logging...')
+            root = logging.getLogger()
+            root.setLevel(logging.DEBUG)
 
-APP_HOST = os.getenv('APP_HOST', '127.0.0.1')
-APP_PORT = int(os.getenv('APP_PORT', 8000))
+    def __post_init__(self):
+        self.configure_logging()
 
-# Настройки Redis
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 
-# Настройки Elasticsearch
-ELASTIC_SCHEME = os.getenv('ELASTIC_SCHEME', 'http')
-ELASTIC_HOST = os.getenv('ELASTIC_HOST', '127.0.0.1')
-ELASTIC_PORT = int(os.getenv('ELASTIC_PORT', 9200))
+# Инстанциируем настройки окружения
+settings = Settings()
 
-# Корень проекта
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Конфигурируем приложение на основе полученных настроек
+config = Config(settings)

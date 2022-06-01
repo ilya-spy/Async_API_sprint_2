@@ -1,5 +1,3 @@
-import logging
-
 import aioredis
 import uvicorn as uvicorn
 from elasticsearch import AsyncElasticsearch
@@ -7,12 +5,12 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
 from api.v1 import films, genres, persons
-from core import config
-from core.logger import LOGGING
+from core import logger
+from core.config import settings
 from db import elastic, redis
 
 app = FastAPI(
-    title=config.PROJECT_NAME,
+    title=settings.PROJECT_NAME,
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
@@ -27,8 +25,10 @@ async def startup():
     Поэтому логика подключения происходит в асинхронной функции
     :return:
     """
-    redis.redis = aioredis.from_url(f'redis://{config.REDIS_HOST}:{config.REDIS_PORT}')
-    elastic.es = AsyncElasticsearch(hosts=[f'{config.ELASTIC_SCHEME}://{config.ELASTIC_HOST}:{config.ELASTIC_PORT}'])
+    redis.redis = aioredis.from_url(f'redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
+    elastic.es = AsyncElasticsearch(
+        hosts=[f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}']
+    )
 
 
 @app.on_event('shutdown')
@@ -48,9 +48,9 @@ app.include_router(persons.router, prefix='/api/v1/persons', tags=['persons'])
 if __name__ == '__main__':
     uvicorn.run(
         'main:app',
-        host=config.APP_HOST,
-        port=config.APP_PORT,
-        reload=config.DEBUG,
-        log_config=LOGGING,
-        log_level=logging.DEBUG,
+        host=settings.APP_HOST,
+        port=settings.APP_PORT,
+        reload=settings.DEBUG,
+        log_config=logger.LOGGING,
+        log_level=logger.DEBUG,
     )

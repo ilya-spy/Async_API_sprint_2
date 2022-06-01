@@ -72,6 +72,10 @@ class SearchAPI:
         except NotFoundError:
             self.logger.exception("The requested index was not found")
             return []
+        except Exception:
+            self.logger.exception("The search request could not be performed as requested")
+            return []
+
         try:
             self.logger.info(
                 "Total found %d documents" % (resp['hits']['total']['value']))

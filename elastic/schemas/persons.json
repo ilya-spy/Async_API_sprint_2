@@ -47,7 +47,8 @@
       },
       "full_name": {
         "type": "text",
-        "analyzer": "ru_en"
+        "analyzer": "ru_en",
+        "fielddata": true
       },
       "films": {
         "type": "nested",

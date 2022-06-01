@@ -15,7 +15,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/search")
+@router.get("/search", response_model=list[FilmBase])
 async def search_films(
         query: str,
         pg_size: int = Query(default=50, alias="page[size]"),
@@ -69,7 +69,7 @@ async def film_details(
     return FilmConverter.convert(film)
 
 
-@router.get("/")
+@router.get("/", response_model=list[FilmBase])
 async def films(
         sort: str = Query(default=None, max_length=50),
         pg_size: int = Query(default=50, alias="page[size]"),

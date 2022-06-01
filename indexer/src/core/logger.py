@@ -1,3 +1,10 @@
+import logging
+
+
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 LOG_DEFAULT_HANDLERS = ['console', ]
 
@@ -14,12 +21,10 @@ LOGGING = {
             'format': LOG_FORMAT
         },
         'default': {
-            '()': 'uvicorn.logging.DefaultFormatter',
             'fmt': '%(levelprefix)s %(message)s',
             'use_colors': None,
         },
         'access': {
-            '()': 'uvicorn.logging.AccessFormatter',
             'fmt': "%(levelprefix)s %(client_addr)s - '%(request_line)s' %(status_code)s",
         },
     },
@@ -44,14 +49,6 @@ LOGGING = {
         '': {
             'handlers': LOG_DEFAULT_HANDLERS,
             'level': 'INFO',
-        },
-        'uvicorn.error': {
-            'level': 'INFO',
-        },
-        'uvicorn.access': {
-            'handlers': ['access'],
-            'level': 'INFO',
-            'propagate': False,
         },
     },
     'root': {
