@@ -56,22 +56,6 @@ services:
     depends_on:
       - postgres
 
-  tests:
-    image: api-image
-    environment:
-      - REDIS_HOST
-      - REDIS_PORT
-      - ELASTIC_SCHEMA
-      - ELASTIC_HOST
-      - ELASTIC_PORT
-      - API_HOST
-      - API_PORT
-    entrypoint: >
-      sh -c "pip install -r /app/tests/functional/requirements.txt
-      && python3 /app/tests/functional/utils/wait_for_es.py
-      && python3 /app/tests/functional/utils/wait_for_redis.py
-      && pytest /app/tests/functional/src"
-
   postgres:
     image: agorobets/admin-panel-postgres:latest
     environment:
