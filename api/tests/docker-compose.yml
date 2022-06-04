@@ -25,6 +25,8 @@ services:
 
   tests:
     image: api-image
+    depends_on:
+      - api
     environment:
       - REDIS_HOST
       - REDIS_PORT
