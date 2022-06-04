@@ -1,12 +1,14 @@
 import asyncio
 import logging
+import os
 import sys
 
 import aioredis
 from aioredis import exceptions as rd_exp
 
-# FixMe remove this dirty hack
-sys.path.append('../functional')
+_current = os.path.dirname(os.path.realpath(__file__))
+_parent = os.path.dirname(_current)
+sys.path.append(_parent)
 
 from settings import settings
 
