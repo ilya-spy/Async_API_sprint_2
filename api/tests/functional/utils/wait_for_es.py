@@ -27,6 +27,7 @@ async def wait_es():
         if cnt > PINGS_TO_NOTIFY:
             logger.warning("Elastic search no responses for pings.")
             cnt = 0
+    await es.close()
 
 
 if __name__ == '__main__':

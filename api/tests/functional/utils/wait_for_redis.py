@@ -35,6 +35,7 @@ async def wait():
         if cnt > PINGS_TO_NOTIFY:
             logger.warning("Redis no pings responses.")
             cnt = 0
+    await rd.close()
 
 
 if __name__ == '__main__':
