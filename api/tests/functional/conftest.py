@@ -1,12 +1,12 @@
-import aiohttp
-import pytest
-from typing import Optional
+
 from dataclasses import dataclass
+from typing import Optional
 
-from multidict import CIMultiDictProxy
-from elasticsearch import AsyncElasticsearch
+import aiohttp
 import aioredis
-
+import pytest
+from elasticsearch import AsyncElasticsearch
+from multidict import CIMultiDictProxy
 from settings import settings
 
 

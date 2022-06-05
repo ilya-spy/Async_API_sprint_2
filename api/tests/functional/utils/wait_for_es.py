@@ -1,8 +1,8 @@
 import asyncio
-from contextlib import asynccontextmanager
 import logging
 import os
 import sys
+from contextlib import asynccontextmanager
 from typing import Generator
 
 from elasticsearch import AsyncElasticsearch
@@ -12,7 +12,8 @@ _parent = os.path.dirname(_current)
 sys.path.append(_parent)
 
 from settings import settings
-from wait_for_base import ConnectChecker, wait as base_wait
+from wait_for_base import ConnectChecker
+from wait_for_base import wait as base_wait
 
 
 @asynccontextmanager

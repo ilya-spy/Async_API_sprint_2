@@ -1,19 +1,21 @@
 import asyncio
-from contextlib import asynccontextmanager
 import logging
-from typing import Generator
 import os
 import sys
+from contextlib import asynccontextmanager
+from typing import Generator
 
 import aioredis
-from aioredis import exceptions as rd_exp, Redis
+from aioredis import Redis
+from aioredis import exceptions as rd_exp
 
 _current = os.path.dirname(os.path.realpath(__file__))
 _parent = os.path.dirname(_current)
 sys.path.append(_parent)
 
 from settings import settings
-from wait_for_base import ConnectChecker, wait as base_wait
+from wait_for_base import ConnectChecker
+from wait_for_base import wait as base_wait
 
 
 @asynccontextmanager
