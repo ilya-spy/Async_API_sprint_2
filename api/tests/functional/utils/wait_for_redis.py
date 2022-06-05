@@ -1,45 +1,55 @@
 import asyncio
+from contextlib import asynccontextmanager
 import logging
+from typing import Generator
 import os
 import sys
 
 import aioredis
-from aioredis import exceptions as rd_exp
+from aioredis import exceptions as rd_exp, Redis
 
 _current = os.path.dirname(os.path.realpath(__file__))
 _parent = os.path.dirname(_current)
 sys.path.append(_parent)
 
 from settings import settings
+from wait_for_base import ConnectChecker, wait as base_wait
 
-PINGS_TO_NOTIFY = 30
+
+@asynccontextmanager
+async def get_rds() -> Generator[Redis, None, None]:
+    rds = aioredis.from_url(f'redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
+    try:
+        yield rds
+    finally:
+        await rds.close()
 
 
-async def wait():
-    rd = aioredis.from_url(
-        f'redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
-    cnt = 0
+class RedisChecker(ConnectChecker):
+    def __init__(self, rds: Redis, logger: logging.Logger):
+        self._client = rds
+        self._log = logger
 
-    while True:
+    def __repr__(self):
+        return "Redis"
+
+    async def ping(self) -> bool:
         try:
-            await rd.ping()
+            await self._client.ping()
         except (rd_exp.ConnectionError, rd_exp.TimeoutError):
             pass
         except Exception:
-            logger.exception("Unexpected exception.")
+            self._log.exception("Unexpected exception.")
         else:
-            break
-        # handle exceptions
-        await asyncio.sleep(1)
-        cnt += 1
-        if cnt > PINGS_TO_NOTIFY:
-            logger.warning("Redis no pings responses.")
-            cnt = 0
-    await rd.close()
+            return True
+        return False
+
+
+async def wait_rds():
+    async with get_rds() as rds:
+        log = logging.getLogger("Redis_Waiting")
+        await base_wait(RedisChecker(rds, log), log)
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger("Redis Waiting")
-    logger.info("Try to connect to Redis search.")
-    asyncio.run(wait())
-    logger.info("Redis is ready for work.")
+    asyncio.run(wait_rds())

@@ -1,7 +1,9 @@
 import asyncio
+from contextlib import asynccontextmanager
 import logging
 import os
 import sys
+from typing import Generator
 
 from elasticsearch import AsyncElasticsearch
 
@@ -10,29 +12,33 @@ _parent = os.path.dirname(_current)
 sys.path.append(_parent)
 
 from settings import settings
+from wait_for_base import ConnectChecker, wait as base_wait
 
-PINGS_TO_NOTIFY = 30
+
+@asynccontextmanager
+async def get_es() -> Generator[AsyncElasticsearch, None, None]:
+    es = AsyncElasticsearch(hosts=[f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'])
+    try:
+        yield es
+    finally:
+        await es.close()
+
+
+class EsChecker(ConnectChecker):
+    def __init__(self, es: AsyncElasticsearch):
+        self._client = es
+
+    def __repr__(self):
+        return "Elastic Search"
+
+    async def ping(self) -> bool:
+        return await self._client.ping()
 
 
 async def wait_es():
-    es = AsyncElasticsearch(
-        hosts=[
-            f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'
-        ]
-    )
-    cnt = 0
-    while not await es.ping():
-        await asyncio.sleep(1)
-        cnt += 1
-        if cnt > PINGS_TO_NOTIFY:
-            logger.warning("Elastic search no responses for pings.")
-            cnt = 0
-    await es.close()
+    async with get_es() as es:
+        await base_wait(EsChecker(es), logging.getLogger("Elastic_Waiting"))
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger("Ealstic_Waiting")
-
-    logger.info("Try to connect to Elastic search.")
     asyncio.run(wait_es())
-    logger.info("Elastic search is ready for work.")
