@@ -17,19 +17,16 @@ class HTTPResponse:
     status: int
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 async def es_client():
-    client = AsyncElasticsearch(
-        hosts=f"{settings.ELASTIC_HOST}: {settings.ELASTIC_PORT}"
-    )
+    client = AsyncElasticsearch(hosts=[f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'])
     yield client
     await client.close()
 
 
 @pytest.fixture(scope='session')
 async def redis_client() -> aioredis.Redis:
-    client = aioredis.from_url(
-        f'redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
+    client = aioredis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}")
     yield client
     await client.close()
 
