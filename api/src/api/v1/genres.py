@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Union
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import conint
@@ -75,3 +76,24 @@ async def search_genres(
             detail=GenreErrors.SEARCH_WO_RESULTS.substitute(query=query)
         )
     return [GenreConverter.convert(gnr) for gnr in result]
+
+
+@router.get('/{genre_id}/', response_model=Genre)
+async def film_details(
+        genre_id: UUID,
+        _genre_service: SearchService = Depends(get_genre_service)
+) -> Genre:
+    """
+
+    @param genre_id: film unique identifier
+    @param _genre_service: film extractor
+    @return FilmDetails:
+    """
+    film = await _genre_service.get_single(str(genre_id))
+
+    if not film:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=GenreErrors.NO_SUCH_ID
+        )
+    return GenreConverter.convert(film)
