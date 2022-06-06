@@ -24,9 +24,10 @@ def event_loop():
 
 
 @pytest.fixture(scope="class")
-async def fill_es_genre(es_client):
+async def fill_es_genre(es_client, redis_client):
     genres = GenreFactory.create(100)
-    index_name = "genres"
+    index_name = ["genres", ]
+
     _success, failed = await es_bulk(
         es_client,
         index=index_name,
@@ -34,7 +35,8 @@ async def fill_es_genre(es_client):
     )
     yield genres, failed
 
-    await es_client.delete_by_query(index=index_name, query={"query": {"match_all": {}}})
+    await redis_client.flushdb()
+    await es_client.delete_by_query(index=index_name, body={"query": {"match_all": {}}})
 
 
 @dataclass
