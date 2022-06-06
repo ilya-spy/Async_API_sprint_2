@@ -2,7 +2,7 @@ services:
   api:
     build:
       context: api
-    image: api-image
+    command: make run
     depends_on:
       - elastic
       - redis
@@ -12,13 +12,11 @@ services:
       - ELASTIC_SCHEMA
       - ELASTIC_HOST
       - ELASTIC_PORT
-      - APP_HOST=${API_HOST}
-      - APP_PORT=${API_PORT}
+      - APP_HOST=$API_HOST
+      - APP_PORT=$API_PORT
       - DEBUG
     expose:
-      - "${API_PORT}"
-    ports:
-      - "127.0.0.1:8000:${API_PORT}"
+      - "$API_PORT"
     volumes:
       - ./api:/app
 
@@ -55,6 +53,8 @@ services:
       - admin-panel-static:/app/static
     depends_on:
       - postgres
+    expose:
+      - "$ADMIN_PORT"
 
   postgres:
     image: agorobets/admin-panel-postgres:latest
@@ -62,10 +62,10 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - admin-panel-db:/var/lib/postgresql/data/
     expose:
-      - "${DB_PORT}"
-    ports:
-      - "127.0.0.1:5432:${DB_PORT}"
+      - "$DB_PORT"
 
   elastic:
     build:
@@ -74,17 +74,17 @@ services:
       - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
       - 'discovery.type=single-node'
       - 'xpack.security.enabled=false'
+    volumes:
+      - async-api-search:/usr/share/elasticsearch/data
     expose:
-      - "${ELASTIC_PORT}"
-    ports:
-      - "127.0.0.1:9200:${ELASTIC_PORT}"
+      - "$ELASTIC_PORT"
 
   redis:
     image: redis:7.0.0-alpine
+    volumes:
+      - async-api-cache:/data
     expose:
       - "${REDIS_PORT}"
-    ports:
-      - "127.0.0.1:6379:${REDIS_PORT}"
 
   nginx:
     image: nginx:1.19.2
@@ -100,3 +100,6 @@ services:
 
 volumes:
   admin-panel-static:
+  admin-panel-db:
+  async-api-search:
+  async-api-cache:
