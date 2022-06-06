@@ -1,5 +1,8 @@
 import pytest
 
+from testdata.schemes.v1.converter import GenreConverter
+from testdata.schemes.v1.genre import Genre
+
 
 @pytest.mark.asyncio
 class TestGenre:
@@ -9,7 +12,7 @@ class TestGenre:
         response = await make_get_request("genres/{}/".format(genres[middle_id].id))
 
         assert response.status == 200
-        assert response.body[0] == genres[middle_id].dict()
+        assert Genre(**response.body) == GenreConverter.convert(genres[middle_id])
 
     async def test_search(self, fill_es_genre, make_get_request):
         genres, failed = fill_es_genre
