@@ -1,4 +1,4 @@
-
+import asyncio
 from dataclasses import dataclass
 from typing import Optional
 
@@ -9,6 +9,11 @@ from elasticsearch import AsyncElasticsearch
 from multidict import CIMultiDictProxy
 
 from functional.settings import settings
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    return asyncio.get_event_loop()
 
 
 @dataclass
