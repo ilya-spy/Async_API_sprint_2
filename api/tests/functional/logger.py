@@ -2,6 +2,7 @@ import logging
 
 from functional.settings import settings
 
+
 class TestLogger:
     def __init__(self) -> None:
         logging.basicConfig(
@@ -12,5 +13,6 @@ class TestLogger:
 
     def get(self):
         return self.logger
+
 
 logger: logging.Logger = TestLogger().get()

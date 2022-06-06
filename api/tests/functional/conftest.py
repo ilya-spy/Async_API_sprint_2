@@ -1,6 +1,5 @@
 
 from dataclasses import dataclass
-from logging import Logger
 from typing import Optional
 
 import aiohttp
@@ -10,6 +9,7 @@ from elasticsearch import AsyncElasticsearch
 from multidict import CIMultiDictProxy
 
 from functional.settings import settings
+
 
 @dataclass
 class HTTPResponse:
@@ -42,7 +42,7 @@ async def session():
 @pytest.fixture
 def request_fabric(session):
     async def make_request(method: str,
-                    params: Optional[dict] = None) -> HTTPResponse:
+                           params: Optional[dict] = None) -> HTTPResponse:
         params = params or {}
         # в боевых системах старайтесь так не делать!
         url = f"{settings.API_HOST}:{settings.API_PORT}/api/v1/{method}"

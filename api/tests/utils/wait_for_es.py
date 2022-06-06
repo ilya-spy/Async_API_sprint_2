@@ -34,6 +34,7 @@ class EsChecker(ConnectChecker):
         logger.info("Pinging elastic searcher...")
         return await self.client.ping()
 
+
 async def wait_for_elastic():
     async with get_es() as es:
         checker = EsChecker(es)
