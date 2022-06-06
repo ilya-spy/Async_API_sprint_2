@@ -1,29 +1,24 @@
 services:
-  postgres:
-    # dev config can map/access directly to/from host
-    ports:
-      - $DB_PORT:$DB_PORT
-  
   elastic:
     # dev config can map/access directly to/from host
     ports:
-      - $ELASTIC_PORT:$ELASTIC_PORT
+      - 127.0.0.1:$ELASTIC_PORT:$ELASTIC_PORT
 
   redis:
     # dev config can map/access directly to/from host
     ports:
-      - $REDIS_PORT:$REDIS_PORT
+      - 127.0.0.1:$REDIS_PORT:$REDIS_PORT
 
   api:
     # dev config can map/access directly to/from host
     ports:
-      - $API_PORT:$API_PORT
+      - 127.0.0.1:$API_PORT:$API_PORT
 
   tests:
     # dev config also runs tests next to running api
     # using default api container image, from git project name
     image: async_api_sprint_1_api
-    command: make test
+    command: make dev
     depends_on:
       - api
     environment:

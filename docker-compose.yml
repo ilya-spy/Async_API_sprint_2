@@ -2,7 +2,6 @@ services:
   api:
     build:
       context: api
-    command: make run
     depends_on:
       - elastic
       - redis
@@ -84,7 +83,7 @@ services:
     volumes:
       - async-api-cache:/data
     expose:
-      - "${REDIS_PORT}"
+      - "$REDIS_PORT"
 
   nginx:
     image: nginx:1.19.2

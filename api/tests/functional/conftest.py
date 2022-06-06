@@ -40,7 +40,7 @@ async def session():
 
 
 @pytest.fixture
-def request_fabric(session):
+def request_factory(session):
     async def make_request(method: str,
                            params: Optional[dict] = None) -> HTTPResponse:
         params = params or {}

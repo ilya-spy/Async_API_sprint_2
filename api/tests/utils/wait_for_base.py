@@ -7,7 +7,6 @@ class ConnectChecker(ABC):
     RETRY_ATTEMPTS = 30
 
     def __init__(self, logger) -> None:
-        super().__init__()
         self.logger: Logger = logger
 
     @abstractmethod
