@@ -1,6 +1,7 @@
-import logging
+from logging import Logger
+from functional.logger import logger
 
 
 def test_hello():
-    logger = logging.getLogger("Hello")
-    logger.info("World!")
+    hello_logger: Logger = logger.getChild("HelloTest")
+    hello_logger.info("World!")

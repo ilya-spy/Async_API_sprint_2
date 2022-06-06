@@ -1,24 +1,21 @@
 import asyncio
 import logging
-import os
-import sys
 from contextlib import asynccontextmanager
 from typing import Generator
 
 from elasticsearch import AsyncElasticsearch
 
-_current = os.path.dirname(os.path.realpath(__file__))
-_parent = os.path.dirname(_current)
-sys.path.append(_parent)
+from functional.settings import settings
+from functional.logger import logger
 
-from settings import settings
 from wait_for_base import ConnectChecker
-from wait_for_base import wait as base_wait
 
 
 @asynccontextmanager
 async def get_es() -> Generator[AsyncElasticsearch, None, None]:
-    es = AsyncElasticsearch(hosts=[f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'])
+    es = AsyncElasticsearch(hosts=[
+        f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'
+    ])
     try:
         yield es
     finally:
@@ -27,19 +24,21 @@ async def get_es() -> Generator[AsyncElasticsearch, None, None]:
 
 class EsChecker(ConnectChecker):
     def __init__(self, es: AsyncElasticsearch):
-        self._client = es
+        super().__init__(logging.getLogger("Elastic_Waiting"))
+        self.client = es
 
     def __repr__(self):
         return "Elastic Search"
 
     async def ping(self) -> bool:
-        return await self._client.ping()
+        logger.info("Pinging elastic searcher...")
+        return await self.client.ping()
 
 
-async def wait_es():
+async def wait_for_elastic():
     async with get_es() as es:
-        await base_wait(EsChecker(es), logging.getLogger("Elastic_Waiting"))
-
+        checker = EsChecker(es)
+        await checker.wait()
 
 if __name__ == '__main__':
-    asyncio.run(wait_es())
+    asyncio.run(wait_for_elastic())

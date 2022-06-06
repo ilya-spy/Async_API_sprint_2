@@ -1,7 +1,5 @@
 import asyncio
 import logging
-import os
-import sys
 from contextlib import asynccontextmanager
 from typing import Generator
 
@@ -9,13 +7,10 @@ import aioredis
 from aioredis import Redis
 from aioredis import exceptions as rd_exp
 
-_current = os.path.dirname(os.path.realpath(__file__))
-_parent = os.path.dirname(_current)
-sys.path.append(_parent)
+from functional.settings import settings
+from functional.logger import logger
 
-from settings import settings
 from wait_for_base import ConnectChecker
-from wait_for_base import wait as base_wait
 
 
 @asynccontextmanager
@@ -28,30 +23,31 @@ async def get_rds() -> Generator[Redis, None, None]:
 
 
 class RedisChecker(ConnectChecker):
-    def __init__(self, rds: Redis, logger: logging.Logger):
-        self._client = rds
-        self._log = logger
+    def __init__(self, rds: Redis):
+        super().__init__(logging.getLogger("Elastic_Waiting"))
+        self.client: Redis = rds
 
     def __repr__(self):
-        return "Redis"
+        return "Redis cache"
 
     async def ping(self) -> bool:
+        logger.info("Pinging redis cacher...")
         try:
-            await self._client.ping()
+            await self.client.ping()
         except (rd_exp.ConnectionError, rd_exp.TimeoutError):
             pass
         except Exception:
-            self._log.exception("Unexpected exception.")
+            logger.exception("Unexpected exception.")
         else:
             return True
         return False
 
 
-async def wait_rds():
+async def wait_for_redis():
     async with get_rds() as rds:
-        log = logging.getLogger("Redis_Waiting")
-        await base_wait(RedisChecker(rds, log), log)
+        checker = RedisChecker(rds)
+        await checker.wait()
 
 
 if __name__ == '__main__':
-    asyncio.run(wait_rds())
+    asyncio.run(wait_for_redis())
