@@ -4,10 +4,9 @@ from contextlib import asynccontextmanager
 from typing import Generator
 
 from elasticsearch import AsyncElasticsearch
-
-from functional.settings import settings
+from elasticsearch import logger as es_logger
 from functional.logger import logger
-
+from functional.settings import settings
 from wait_for_base import ConnectChecker
 
 
@@ -41,4 +40,5 @@ async def wait_for_elastic():
         await checker.wait()
 
 if __name__ == '__main__':
+    es_logger.setLevel("ERROR")
     asyncio.run(wait_for_elastic())

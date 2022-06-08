@@ -6,10 +6,8 @@ from typing import Generator
 import aioredis
 from aioredis import Redis
 from aioredis import exceptions as rd_exp
-
-from functional.settings import settings
 from functional.logger import logger
-
+from functional.settings import settings
 from wait_for_base import ConnectChecker
 
 

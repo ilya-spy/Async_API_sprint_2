@@ -1,6 +1,5 @@
 import logging
 
-
 DEBUG = logging.DEBUG
 INFO = logging.INFO
 WARNING = logging.WARNING
