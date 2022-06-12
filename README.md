@@ -43,8 +43,7 @@ https://github.com/gorobets-andrey-123/Async_API_sprint_1.git
 ## Запуск проекта и тестовой среды разработки
 
 ```
-    cd tests
-    docker-compose.dev.yml up -d [ --build ]
+    docker-compose -f docker-compose.test.yml up -d [ --build ]
 ```
 
 ### Доступ к Admin Panel
