@@ -6,9 +6,8 @@ import aiohttp
 import aioredis
 import pytest
 from elasticsearch import AsyncElasticsearch
-from multidict import CIMultiDictProxy
-
 from functional.settings import settings
+from multidict import CIMultiDictProxy
 
 
 @pytest.fixture(scope="session")

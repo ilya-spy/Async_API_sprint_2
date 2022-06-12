@@ -1,4 +1,5 @@
 from logging import Logger
+
 from functional.logger import logger
 
 
