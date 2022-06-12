@@ -5,7 +5,7 @@ run:
 	PYTHONPATH=$(shell pwd)/src gunicorn -c src/core/gunicorn.py main:app
 
 prep:
-	pip install --no-cache-dir -r tests/ 11requirements.``txt
+	pip install --no-cache-dir -r tests/requirements.txt
 	PYTHONPATH=$(shell pwd)/tests python3 tests/utils/wait_for_es.py
 	PYTHONPATH=$(shell pwd)/tests python3 tests/utils/wait_for_redis.py
 

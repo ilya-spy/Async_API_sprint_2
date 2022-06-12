@@ -1,7 +1,7 @@
 services:
   api:
     build:
-      context: ../../api
+      context: api
     image: api-image
     depends_on:
       - elastic
@@ -19,11 +19,11 @@ services:
     ports:
       - 127.0.0.1:$API_PORT:$API_PORT
     volumes:
-      - ../../api:/app
+      - ./api:/app
 
   elastic:
     build:
-      context: ../../elastic
+      context: elastic
     environment:
       - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
       - 'discovery.type=single-node'
@@ -56,4 +56,4 @@ services:
       - REDIS_HOST
       - REDIS_PORT
     volumes:
-      - ../../api:/app
+      - ./api:/app
