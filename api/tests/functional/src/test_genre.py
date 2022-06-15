@@ -63,4 +63,3 @@ class TestGenreEp:
         response = await request_factory(self.URI, None)
         assert response.status == 200
         self._check_page(genres, response.body)
-
