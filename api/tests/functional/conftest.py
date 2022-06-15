@@ -17,7 +17,7 @@ def event_loop():
     return asyncio.get_event_loop()
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 async def fill_es_genre(es_client, redis_client):
     genres = GenreFactory.create(100)
     index_name = ["genres", ]
