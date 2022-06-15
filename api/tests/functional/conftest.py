@@ -6,16 +6,10 @@ import aiohttp
 import aioredis
 import pytest
 from elasticsearch import AsyncElasticsearch
-from functional.settings import settings
 from elasticsearch.helpers import async_bulk as es_bulk
 from multidict import CIMultiDictProxy
+from settings import settings
 from testdata.models.genre_factory import GenreFactory
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    return asyncio.get_event_loop()
-
 
 
 @pytest.fixture(scope="session")
@@ -73,8 +67,7 @@ async def session():
 
 @pytest.fixture
 def request_factory(session):
-    async def make_request(method: str,
-                           params: Optional[dict] = None) -> HTTPResponse:
+    async def make_request(endpoint: str, params: Optional[dict] = None) -> HTTPResponse:
         params = params or {}
         # в боевых системах старайтесь так не делать!
         url = f"{settings.API_SCHEME}://{settings.API_HOST}:{settings.API_PORT}/api/v1/{endpoint}"
