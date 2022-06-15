@@ -79,21 +79,21 @@ async def search_genres(
 
 
 @router.get('/{genre_id}/', response_model=Genre)
-async def film_details(
+async def genre_details(
         genre_id: UUID,
         _genre_service: SearchService = Depends(get_genre_service)
 ) -> Genre:
     """
 
-    @param genre_id: film unique identifier
-    @param _genre_service: film extractor
-    @return FilmDetails:
+    @param genre_id: genre unique identifier
+    @param _genre_service: genre extractor
+    @return Genre:
     """
-    film = await _genre_service.get_single(str(genre_id))
+    genre = await _genre_service.get_single(str(genre_id))
 
-    if not film:
+    if not genre:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail=GenreErrors.NO_SUCH_ID
         )
-    return GenreConverter.convert(film)
+    return GenreConverter.convert(genre)
