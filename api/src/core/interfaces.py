@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-### Cache interfaces
+# Cache interfaces
 
 
 class CacheIndex(BaseModel):
@@ -42,7 +42,7 @@ class CacheAPI(ABC):
         pass
 
 
-### Search interfaces
+# Search interfaces
 
 
 @dataclass

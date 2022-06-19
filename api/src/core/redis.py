@@ -1,8 +1,6 @@
 import json
 import logging
-from abc import ABC, abstractmethod
-import pprint
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from aioredis import Redis

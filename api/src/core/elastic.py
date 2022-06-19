@@ -7,6 +7,7 @@ from elasticsearch import AsyncElasticsearch, NotFoundError
 from core.interfaces import SearchCursor, SearchFilter, SearchNestedField
 from core.redis import Redis, RedisCacher
 
+
 class SearchAPI:
     def __init__(self, index: str, elastic: AsyncElasticsearch) -> None:
         self.elastic = elastic

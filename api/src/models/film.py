@@ -2,6 +2,7 @@ from uuid import UUID
 
 from models import base, genre, person
 
+
 class Film(base.BaseOrJsonModel):
     """Модель фильма."""
     id: UUID

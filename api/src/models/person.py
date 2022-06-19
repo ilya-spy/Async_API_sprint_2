@@ -3,10 +3,12 @@ from uuid import UUID
 
 from models import base
 
+
 class PersonFilm(base.BaseOrJsonModel):
     film_id: UUID
     role: str
     title: str
+
 
 
 class Person(base.BaseOrJsonModel):
