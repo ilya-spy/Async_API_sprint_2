@@ -1,12 +1,22 @@
 import json
 import logging
 from abc import ABC, abstractmethod
+import pprint
 from typing import Any, Optional
+from uuid import UUID
 
 from aioredis import Redis
 from pydantic import BaseModel
 
 from core.interfaces import CacheAPI, CacheIndex
+
+
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            # if the obj is uuid, we simply return the value of uuid
+            return obj.hex
+        return json.JSONEncoder.default(self, obj)
 
 
 class RedisCacher(CacheAPI):
@@ -27,24 +37,27 @@ class RedisCacher(CacheAPI):
                 rv[key.decode()] = cls.decode_redis(src[key])
             return rv
         elif isinstance(src, bytes):
-            return src.decode()
+            return json.loads(src.decode())
         else:
             raise Exception("type not handled: " + type(src))
 
-    def __init__(self, redis: Redis) -> None:
+    def __init__(self, index: str, redis: Redis) -> None:
+        self.index = index
         self.redis = redis
         self.logger = logging.getLogger("CacheAPI:")
 
     async def get_scalar(self, key: str) -> Optional[BaseModel]:
-        object = await self.redis.hgetall(key)
+        entry = f'{self.index}__{key}'
+        object = await self.redis.get(f'{entry}')
         if object:
-            self.logger.debug(f'Redis state key found: {key}')
+            self.logger.debug(f'Redis state key found: {entry}')
             return self.decode_redis(object)
         return None
 
     async def put_scalar(self, key: str, value: BaseModel) -> None:
-        self.logger.debug(f'Redis state put key: {key}')
-        await self.redis.hmset(key, dict(value))
+        entry = f'{self.index}__{key}'
+        self.logger.debug(f'Redis state put key: {entry}')
+        await self.redis.set(entry, value.json())
 
     async def get_vector(self, key: str) -> list[Optional[dict]]:
         result = await self.get_scalar(key)

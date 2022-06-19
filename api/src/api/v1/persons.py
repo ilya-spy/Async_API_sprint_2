@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from api.v1.errors import PersonErrors
 from api.v1.schemes.converter import PersonConverter
 from api.v1.schemes.person import Person
-from services._search import SearchService
+from core.elastic import SearchService
 from services.person import get_person_service
 
 router: APIRouter = APIRouter()

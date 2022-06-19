@@ -2,7 +2,7 @@ from uuid import UUID
 
 from api.v1.schemes.genre import Genre
 from api.v1.schemes.person import PersonBase
-from utils.model_json import BaseOrJsonModel
+from models.base import BaseOrJsonModel
 
 
 class FilmBase(BaseOrJsonModel):

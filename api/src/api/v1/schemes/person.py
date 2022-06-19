@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from utils.model_json import BaseOrJsonModel
+from models.base import BaseOrJsonModel
 
 
 class PersonBase(BaseOrJsonModel):

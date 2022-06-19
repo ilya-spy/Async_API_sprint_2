@@ -1,10 +1,8 @@
 from uuid import UUID
 
-from models import genre, person
-from utils.model_json import BaseOrJsonModel
+from models import base, genre, person
 
-
-class Film(BaseOrJsonModel):
+class Film(base.BaseOrJsonModel):
     """Модель фильма."""
     id: UUID
     type: str

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from api.v1.errors import FilmErrors
 from api.v1.schemes.converter import FilmBaseConverter, FilmConverter
 from api.v1.schemes.film import Film, FilmBase
-from services._search import SearchService
+from core.elastic import SearchService
 from services.film import get_film_service
 
 router = APIRouter()
