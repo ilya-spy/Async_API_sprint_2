@@ -7,7 +7,7 @@ from fastapi import Depends
 from db.elastic import get_elastic
 from db.redis import get_redis
 from models.genre import Genre
-from services._search import SearchService
+from core.elastic import SearchService
 
 
 # get_genre_service — это провайдер GenreService.

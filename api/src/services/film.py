@@ -7,7 +7,7 @@ from fastapi import Depends
 from db.elastic import get_elastic
 from db.redis import get_redis
 from models.film import Film
-from services._search import SearchService
+from core.elastic import SearchService
 
 
 @lru_cache()

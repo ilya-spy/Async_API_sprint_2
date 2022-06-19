@@ -1,44 +1,11 @@
 import logging
-from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
 from aioredis import Redis
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
-from services._cache import CacheAPI
-
-
-@dataclass
-class SearchCursor:
-    page: Optional[int]
-    size: Optional[int]
-    sort: Optional[int]
-
-    def __post_init__(self):
-        self.offset = (self.page - 1) * self.size if self.page > 0 else 0
-
-    def __repr__(self):
-        return f'SearchCursor::page={self.page},size={self.size},sort={self.sort}'
-
-
-@dataclass
-class SearchFilter:
-    field: str
-    query: Optional[str]
-    filter: Optional[str]
-
-    def __repr__(self):
-        return f'SearchFilter::field={self.field},query={self.query},filter={self.filter}'
-
-
-@dataclass
-class SearchNestedField:
-    field: str
-    value: str
-
-    def __repr__(self):
-        return f'SearchNestedField::field={self.field},value={self.value}'
+from core.interfaces import CacheAPI, SearchCursor, SearchFilter, SearchNestedField
 
 
 class SearchAPI:
@@ -154,7 +121,7 @@ class SearchService:
         cursor = SearchCursor(page, size, sort)
 
         # look in cache upfront
-        if cached := await self.cacher.get_index(self.index, repr(cursor)):
+        if cached := await self.cacher.get_vector(self.index, repr(cursor)):
             self.logger.info("%s index get from cache: %s"
                              % (self.index, repr(cursor)))
             return [self.model(**c) for c in cached]
