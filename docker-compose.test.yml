@@ -28,6 +28,8 @@ services:
       - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
       - 'discovery.type=single-node'
       - 'xpack.security.enabled=false'
+    volumes:
+      - async-api-search-test:/usr/share/elasticsearch/data
     expose:
       - "$ELASTIC_PORT"
     ports:
@@ -35,6 +37,8 @@ services:
 
   redis:
     image: redis:7.0.0-alpine
+    volumes:
+      - async-api-cache-test:/data
     expose:
       - "$REDIS_PORT"
     ports:
@@ -57,3 +61,7 @@ services:
       - REDIS_PORT
     volumes:
       - ./api:/app
+
+volumes:
+  async-api-search-test:
+  async-api-cache-test:
