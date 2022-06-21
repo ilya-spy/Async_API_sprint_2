@@ -1,20 +1,11 @@
 import json
 import logging
 from typing import Optional
-from uuid import UUID
 
 from aioredis import Redis
 from pydantic import BaseModel
 
 from interfaces.cache import CacheAPI, CacheIndex
-
-
-class UUIDEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, UUID):
-            # if the obj is uuid, we simply return the value of uuid
-            return obj.hex
-        return json.JSONEncoder.default(self, obj)
 
 
 class RedisCacher(CacheAPI):

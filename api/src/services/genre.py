@@ -1,13 +1,13 @@
 from functools import lru_cache
 
-from aioredis import Redis
-from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 
+from core.elastic import AsyncElasticsearch
+from core.redis import Redis
 from db.elastic import get_elastic
 from db.redis import get_redis
 from models.genre import Genre
-from core.elastic import SearchService
+from services.base import DocumentService
 
 
 # get_genre_service — это провайдер GenreService.
@@ -17,5 +17,5 @@ from core.elastic import SearchService
 def get_genre_service(
         redis: Redis = Depends(get_redis),
         elastic: AsyncElasticsearch = Depends(get_elastic),
-) -> SearchService:
-    return SearchService('genres', Genre, redis, elastic)
+) -> DocumentService:
+    return DocumentService('genres', Genre, redis, elastic)
