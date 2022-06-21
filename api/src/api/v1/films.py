@@ -5,11 +5,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from api.v1.errors import FilmErrors
-from api.v1.schemes.converter import FilmBaseConverter, FilmConverter
 from api.v1.schemes.film import Film, FilmBase
-from core.elastic import SearchService
+from core.converter import FilmBaseConverter, FilmConverter
+from core.errors import FilmErrors
+from services.base import DocumentService
 from services.film import get_film_service
+
 
 router = APIRouter()
 
@@ -21,26 +22,24 @@ async def search_films(
         query: str,
         pg_size: int = Query(default=50, alias="page[size]"),
         pg_number: int = Query(default=1, alias="page[number]"),
-        _film_service: SearchService = Depends(get_film_service)
+        film_service: DocumentService = Depends(get_film_service)
 ) -> list[FilmBase]:
-    """Search for 'query' in films
+    """
+    Search for 'query' in film documents
 
     @param query: - searching string
     @param pg_size: - max elements output
     @param pg_number: - offset
     @param _film_service: - internal parameter for work with storages
-    @return list[FilmBase]: - corresponding films
+    @returns list[FilmBase]: - corresponding films
     """
-    # FixMe use such fields 'search_fields = ['title', 'description']'
-    result = await _film_service.search_field(
-        field='title',
+    result = await film_service.search_by_field(
+        path='title',
         query=query,
-        filter=None,
         page=pg_number,
         size=pg_size,
         sort=None
     )
-
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
@@ -52,13 +51,14 @@ async def search_films(
 @router.get('/{film_id}/', response_model=Film)
 async def film_details(
         film_id: UUID,
-        film_service: SearchService = Depends(get_film_service)
+        film_service: DocumentService = Depends(get_film_service)
 ) -> Film:
     """
+    Get a single film document by id
 
     @param film_id: film unique identifier
     @param film_service: film extractor
-    @return FilmDetails:
+    @returns Film:
     """
     film = await film_service.get_single(str(film_id))
 
@@ -79,7 +79,7 @@ async def films(
             default=None,
             alias="filter[genre]"
         ),
-        _film_service: SearchService = Depends(get_film_service)
+        film_service: DocumentService = Depends(get_film_service)
 ) -> list[FilmBase]:
     """  Returns films
 
@@ -91,15 +91,15 @@ async def films(
     @return list[FilmBase]:
     """
     if fltr:
-        result = await _film_service.search_nested_field(
-            "genre.id",
-            str(fltr),
-            pg_number,
-            pg_size,
-            sort
+        result = await film_service.search_by_field(
+            path="genre.id",
+            query=str(fltr),
+            page=pg_number,
+            size=pg_size,
+            sort=sort
         )
     else:
-        result = await _film_service.list_all(pg_number, pg_size, sort)
+        result = await film_service.list_all(pg_number, pg_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
