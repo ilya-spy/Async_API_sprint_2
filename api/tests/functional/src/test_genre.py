@@ -9,9 +9,10 @@ from testdata.schemes.v1.genre import Genre
 class TestGenreIdEp:
     uri = "genres/{}/"
 
-    async def test_id(self, fill_es_genre, request_factory):
+    async def test_id(self, fill_es_genre, request_factory, get_cache_cleaner):
         genres, _failed = fill_es_genre
         ids = (0, int(len(genres) / 2), -1)
+        await get_cache_cleaner()
         for pos in ids:
             response = await request_factory(self.uri.format(genres[pos].id))
             assert response.status == 200
@@ -44,13 +45,16 @@ class TestGenreEp:
                     p_number: int = _DEFAULT_PAGE_NUMBER):
         page_size = g_len if (g_len := len(genres)) < p_size else p_size
         assert len(resp_body) == page_size
-        pos = [0, int(page_size / 2), -1]
+        pos = [0, int(page_size / 2), page_size - 1]
         for p in pos:
             assert Genre(**resp_body[p]) == GenreConverter.convert(genres[p])
 
     @pytest.mark.parametrize("page_size, page_number, result",
                              [(100, 1, 200), (-50, 1, 422), (50, -1, 422), (500, 65535, 404)])
-    async def test_pages(self, page_size: int, page_number: int, result: int, fill_es_genre, request_factory):
+    async def test_pages(self, page_size: int, page_number: int, result: int, fill_es_genre, request_factory,
+                         get_cache_cleaner):
+        await get_cache_cleaner()
+
         genres, failed = fill_es_genre
         params = {"page[size]": page_size, "page[number]": page_number}
         response = await request_factory(self.URI, params=params)
