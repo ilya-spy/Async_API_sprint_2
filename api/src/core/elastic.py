@@ -4,7 +4,7 @@ from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
-from core.interfaces import SearchCursor, SearchFilter, SearchNestedField
+from interfaces.search import SearchCursor, SearchFilter, SearchNestedField
 from core.redis import Redis, RedisCacher
 
 

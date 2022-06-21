@@ -6,7 +6,7 @@ from uuid import UUID
 from aioredis import Redis
 from pydantic import BaseModel
 
-from core.interfaces import CacheAPI, CacheIndex
+from interfaces.cache import CacheAPI, CacheIndex
 
 
 class UUIDEncoder(json.JSONEncoder):

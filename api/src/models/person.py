@@ -10,7 +10,6 @@ class PersonFilm(base.BaseOrJsonModel):
     title: str
 
 
-
 class Person(base.BaseOrJsonModel):
     """Модель персоны."""
     id: UUID

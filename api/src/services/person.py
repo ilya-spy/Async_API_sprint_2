@@ -8,6 +8,7 @@ from models.person import Person
 from core.elastic import AsyncElasticsearch, SearchService
 from core.redis import Redis
 
+
 # get_genre_service — это провайдер SearchService.
 # С помощью Depends он сообщает, что ему необходимы Redis и Elasticsearch
 # Используем lru_cache-декоратор, чтобы создать объект сервиса в едином экземпляре (синглтон)
