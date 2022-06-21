@@ -81,7 +81,7 @@ async def search_genres(
 @router.get('/{genre_id}/', response_model=Genre)
 async def genre_details(
         genre_id: UUID,
-        _genre_service: SearchService = Depends(get_genre_service)
+        _genre_service: DocumentService = Depends(get_genre_service)
 ) -> Genre:
     """
 
