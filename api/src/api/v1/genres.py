@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from api.v1.errors import GenreErrors
 from api.v1.schemes.converter import GenreConverter
 from api.v1.schemes.genre import Genre
-from services._search import SearchService
+from core.elastic import SearchService
 from services.genre import get_genre_service
 
 router: APIRouter = APIRouter()

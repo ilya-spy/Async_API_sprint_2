@@ -1,16 +1,16 @@
 from typing import Optional
 from uuid import UUID
 
-from utils.model_json import BaseOrJsonModel
+from models import base
 
 
-class PersonFilm(BaseOrJsonModel):
+class PersonFilm(base.BaseOrJsonModel):
     film_id: UUID
     role: str
     title: str
 
 
-class Person(BaseOrJsonModel):
+class Person(base.BaseOrJsonModel):
     """Модель персоны."""
     id: UUID
     full_name: str

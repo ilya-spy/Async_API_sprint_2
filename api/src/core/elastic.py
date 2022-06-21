@@ -1,44 +1,11 @@
 import logging
-from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
-from aioredis import Redis
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
-from services._cache import CacheAPI
-
-
-@dataclass
-class SearchCursor:
-    page: Optional[int]
-    size: Optional[int]
-    sort: Optional[int]
-
-    def __post_init__(self):
-        self.offset = (self.page - 1) * self.size if self.page > 0 else 0
-
-    def __repr__(self):
-        return f'SearchCursor::page={self.page},size={self.size},sort={self.sort}'
-
-
-@dataclass
-class SearchFilter:
-    field: str
-    query: Optional[str]
-    filter: Optional[str]
-
-    def __repr__(self):
-        return f'SearchFilter::field={self.field},query={self.query},filter={self.filter}'
-
-
-@dataclass
-class SearchNestedField:
-    field: str
-    value: str
-
-    def __repr__(self):
-        return f'SearchNestedField::field={self.field},value={self.value}'
+from interfaces.search import SearchCursor, SearchFilter, SearchNestedField
+from core.redis import Redis, RedisCacher
 
 
 class SearchAPI:
@@ -138,23 +105,18 @@ class SearchService:
     def __init__(self, index: str, model: object,
                  redis: Redis, elastic: AsyncElasticsearch):
         self.index = index
-        self.cacher = CacheAPI(index, redis)
+        self.cacher = RedisCacher(index, redis)
         self.searcher = SearchAPI(index, elastic)
         self.logger = logging.getLogger(f"SearchService: {index}")
         self.model = model
 
     async def list_all(self, page: Optional[int], size: Optional[int],
                        sort: Optional[str]) -> list[Optional[object]]:
-        """
-        @param page:
-        @param size:
-        @param sort:
-        @return: list[Optional[object]]
-        """
+        """List all documents in the index, with sorting by field"""
         cursor = SearchCursor(page, size, sort)
 
         # look in cache upfront
-        if cached := await self.cacher.get_index(self.index, repr(cursor)):
+        if cached := await self.cacher.get_vector(repr(cursor)):
             self.logger.info("%s index get from cache: %s"
                              % (self.index, repr(cursor)))
             return [self.model(**c) for c in cached]
@@ -168,10 +130,7 @@ class SearchService:
             f"Fetched and converted {len(converted)} {self.index} elastic docs")
 
         # put page to cache
-        await self.cacher.put_index(self.index, repr(cursor), converted)
-        self.logger.info("%s index put as key: %s"
-                         % (self.index, repr(cursor)))
-
+        await self.cacher.put_vector(repr(cursor), converted)
         return converted
 
     async def search_nested_field(
@@ -182,22 +141,13 @@ class SearchService:
             size: Optional[int],
             sort: Optional[str]
     ) -> list:
-        """ Looking for nested field like with the corresponding value
-
-        @param field:
-        @param field_val:
-        @param page:
-        @param size:
-        @param sort:
-        @return:
-        """
+        """ Looking for nested field like with the corresponding value"""
         cursor = SearchCursor(page, size, sort)
         match = SearchNestedField(field, field_val)
 
         # look in cache upfront
-        if cached := await self.cacher.get_index(
-                self.index,
-                repr('_'.join([repr(cursor), repr(match)]))
+        if cached := await self.cacher.get_vector(
+            ('_'.join([repr(cursor), repr(match)]))
         ):
             self.logger.info(
                 "%s index get from cache: %s"
@@ -215,15 +165,13 @@ class SearchService:
 
         # put page to cache
         if converted:
-            await self.cacher.put_index(
-                self.index,
-                repr('_'.join([repr(cursor), repr(match)])),
+            await self.cacher.put_vector(
+                ('_'.join([repr(cursor), repr(match)])),
                 list(map(lambda o: o.dict(), converted)))
             self.logger.info("%s index put as key: %s"
                              % (
                                  self.index,
                                  repr(SearchCursor(page, size, sort))))
-
         return converted
 
     async def search_field(self, field: str,
@@ -242,9 +190,8 @@ class SearchService:
         match = SearchFilter(field, query, filter)
 
         # look in cache upfront
-        if cached := await self.cacher.get_index(
-                self.index,
-                repr('_'.join([repr(cursor), repr(match)]))
+        if cached := await self.cacher.get_vector(
+                ('_'.join([repr(cursor), repr(match)]))
         ):
             self.logger.info(
                 "%s index get from cache: %s"
@@ -262,9 +209,8 @@ class SearchService:
 
         # put page to cache
         if converted:
-            await self.cacher.put_index(
-                self.index,
-                repr('_'.join([repr(cursor), repr(match)])),
+            await self.cacher.put_vector(
+                ('_'.join([repr(cursor), repr(match)])),
                 list(map(lambda o: o.dict(), converted)))
             self.logger.info("%s index put as key: %s"
                              % (
@@ -275,7 +221,7 @@ class SearchService:
 
     async def get_single(self, uuid: str):
         # look in cache upfront
-        if cached := await self.cacher.get_single(uuid):
+        if cached := await self.cacher.get_scalar(uuid):
             self.logger.info("%s id record get from cache: %s"
                              % (self.index, cached))
             return self.model(**cached)
@@ -283,6 +229,6 @@ class SearchService:
         result = await self.searcher.look_single(uuid, self.model)
         self.logger.info("got result search: " + str(result))
         if result:
-            await self.cacher.put_single(uuid, result)
+            await self.cacher.put_scalar(uuid, result)
             self.logger.info("object cached as key: %s" % uuid)
         return result

@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from utils.model_json import BaseOrJsonModel
+from models import base
 
 
-class Genre(BaseOrJsonModel):
+class Genre(base.BaseOrJsonModel):
     """Модель жанра."""
     id: UUID
     name: str
