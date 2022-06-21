@@ -7,7 +7,7 @@ from core.redis import Redis, RedisCacher
 
 
 class DocumentService:
-    """API Service providing operations, like listing and searching in an indexed document database"""
+    """API Service providing cache-enabled operations in an indexed document database"""
     def __init__(self, index: str, model: object,
                  redis: Redis, elastic: AsyncElasticsearch):
         self.index = index
@@ -30,8 +30,8 @@ class DocumentService:
         # search all from elastic and convert
         resp = await self.searcher.list_index(cursor)
 
-        converted = [self.model(**entry['_source']) for entry in
-                     (resp if resp else [])]
+        converted = [self.model(**entry) 
+                     for entry in (resp if resp else [])]
         self.logger.info(
             f"Fetched and converted {len(converted)} {self.index} elastic docs")
 
@@ -61,7 +61,7 @@ class DocumentService:
 
         # search for field matches in elastic
         resp = await self.searcher.search_index(cursor, match)
-        converted = [self.model(**entry['_source'])
+        converted = [self.model(**entry)
                      for entry in (resp if resp else [])]
         self.logger.info(
             f"Fetched and converted {len(converted)} {self.index} elastic docs"
@@ -77,6 +77,8 @@ class DocumentService:
         return converted
 
     async def get_single(self, uuid: str) -> Optional[object]:
+        """Get a single document, knowing its identifier directly"""
+
         # look in cache upfront
         if cached := await self.cacher.get_scalar(uuid):
             self.logger.info("%s id record get from cache: %s"

@@ -49,7 +49,9 @@ class ElasticSearcher(SearchAPI):
             self.logger.info(
                 "Total found %d documents" % (resp['hits']['total']['value']))
             self.fetched += len(resp['hits']['hits'])
-            return resp['hits']['hits']
+            return (
+                doc['_source'] for doc in resp['hits']['hits']
+            )
         except KeyError:
             self.logger.exception("The requested query yielded no result")
             return []

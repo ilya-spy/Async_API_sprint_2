@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Название проекта. Используется в Swagger-документации
-    PROJECT_NAME: str = 'movies'
+    PROJECT_NAME: str = 'Read-only API для онлайн-кинотеатра'
 
     # Настройки Unicorn/FastAPI
     APP_HOST: str = '127.0.0.1'

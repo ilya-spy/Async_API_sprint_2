@@ -13,7 +13,12 @@ from services.person import get_person_service
 router: APIRouter = APIRouter()
 
 
-@router.get('/', response_model=list[Person])
+@router.get('/',
+            response_model=list[Person],
+            summary="Список персон",
+            description="Получение всех доступных персон",
+            response_description="Список названий и идентификаторов персон",
+            tags=['Пролистывание документов'])
 async def get_persons(
         sort: Union[str, None] = Query(default=None, max_length=50),
         page_size: Union[int, None] = Query(default=50, alias='page[size]'),
@@ -36,7 +41,12 @@ async def get_persons(
     return [PersonConverter.convert(person) for person in result]
 
 
-@router.get('/search', response_model=list[Person])
+@router.get('/search',
+            response_model=list[Person],
+            summary="Поиск персон",
+            description="Полнотекстовый поиск по персон",
+            response_description="Название и рейтинг персон",
+            tags=['Полнотекстовый поиск'])
 async def search_persons(
         sort: Union[str, None] = Query(default=None, max_length=50),
         page_size: Union[int, None] = Query(default=50, alias='page[size]'),
@@ -66,7 +76,12 @@ async def search_persons(
     return [PersonConverter.convert(person) for person in result]
 
 
-@router.get('/{person_uuid}', response_model=Person)
+@router.get('/{person_uuid}',
+            response_model=Person,
+            summary="Детали персон",
+            description="Получение деталей по персон",
+            response_description="Название и рейтинг персонs, участники, прочее",
+            tags=['Получение документа'])
 async def person_details(person_uuid: UUID, service: DocumentService = Depends(get_person_service)) -> Person:
     person = await service.get_single(str(person_uuid))
     if not person:

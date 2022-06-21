@@ -17,7 +17,12 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/search", response_model=list[FilmBase])
+@router.get("/search",
+            response_model=list[FilmBase],
+            summary="Поиск кинопроизведений",
+            description="Полнотекстовый поиск по кинопроизведениям",
+            response_description="Название и рейтинг фильма",
+            tags=['Полнотекстовый поиск'])
 async def search_films(
         query: str,
         pg_size: int = Query(default=50, alias="page[size]"),
@@ -48,7 +53,12 @@ async def search_films(
     return [FilmBaseConverter.convert(flm) for flm in result]
 
 
-@router.get('/{film_id}/', response_model=Film)
+@router.get('/{film_id}/',
+            response_model=Film,
+            summary="Детали кинопроизведения",
+            description="Получение деталей по кинопроизведениям",
+            response_description="Название и рейтинг фильма, участники, прочее",
+            tags=['Получение документа'])
 async def film_details(
         film_id: UUID,
         film_service: DocumentService = Depends(get_film_service)
@@ -70,12 +80,17 @@ async def film_details(
     return FilmConverter.convert(film)
 
 
-@router.get("/", response_model=list[FilmBase])
+@router.get("/",
+            response_model=list[FilmBase],
+            summary="Список кинопроизведений",
+            description="Получение всех доступных кинопроизведений",
+            response_description="Список названий и идентификаторов кинопроизведений",
+            tags=['Пролистывание документов'])
 async def films(
         sort: str = Query(default=None, max_length=50),
         pg_size: int = Query(default=50, alias="page[size]"),
         pg_number: int = Query(default=1, alias="page[number]"),
-        fltr: Union[UUID, None] = Query(
+        fltr: Union[str, None] = Query(
             default=None,
             alias="filter[genre]"
         ),
@@ -92,7 +107,7 @@ async def films(
     """
     if fltr:
         result = await film_service.search_by_field(
-            path="genre.id",
+            path="genre.name",
             query=str(fltr),
             page=pg_number,
             size=pg_size,
