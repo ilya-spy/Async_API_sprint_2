@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import Optional, Awaitable, Callable, Any
+from typing import Optional, Awaitable, Callable, AsyncGenerator
 
 import aiohttp
 import aioredis
@@ -10,6 +10,7 @@ from elasticsearch.helpers import async_bulk as es_bulk
 from multidict import CIMultiDictProxy
 from settings import settings
 from testdata.models.genre_factory import GenreFactory
+from testdata.schemes.v1.genre import Genre
 
 _GENRES_COUNT = 100
 
@@ -20,7 +21,7 @@ def event_loop():
 
 
 @pytest.fixture(scope="module")
-async def fill_es_genre(es_client, get_es_cleaner, get_cache_cleaner):
+async def fill_es_genre(es_client, get_es_cleaner, get_cache_cleaner) -> AsyncGenerator[(Genre, list[Genre])]:
     genres = GenreFactory.create(_GENRES_COUNT)
     index_name = ["genres", ]
     # clear all other data for genres
@@ -49,12 +50,30 @@ def get_es_cleaner(es_client) -> Callable[[str], Awaitable[None]]:
     return clear_es
 
 
+@pytest.fixture
+async def no_cache(redis_client):
+    await redis_client.flushdb()
+    yield
+    await redis_client.flushdb()
+
+
 @pytest.fixture(scope="session")
 def get_cache_cleaner(redis_client) -> Callable[[None], Awaitable[None]]:
     async def clear_redis():
         await redis_client.flushdb()
 
     return clear_redis
+
+
+@pytest.fixture(scope="session")
+def get_es_entry_updater(es_client) -> Callable[[str, str, dict[str, str]], Awaitable[None]]:
+    async def updater(index: str, doc_id: str, fields: dict[str, str]):
+        req_body = {
+            "doc": fields
+        }
+        await es_client.update(index=index, id=doc_id, body=req_body, refresh=True)
+
+    return updater
 
 
 @dataclass
