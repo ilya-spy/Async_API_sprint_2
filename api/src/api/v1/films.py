@@ -4,13 +4,13 @@ from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import conint
 
 from api.v1.schemes.film import Film, FilmBase
 from core.converter import FilmBaseConverter, FilmConverter
 from core.errors import FilmErrors
 from services.base import DocumentService
 from services.film import get_film_service
-
 
 router = APIRouter()
 
@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
             tags=['Полнотекстовый поиск'])
 async def search_films(
         query: str,
-        pg_size: int = Query(default=50, alias="page[size]"),
-        pg_number: int = Query(default=1, alias="page[number]"),
+        pg_size: conint(strict=True, gt=0) = Query(default=50, alias="page[size]"),
+        pg_number: conint(strict=True, gt=0) = Query(default=1, alias="page[number]"),
         film_service: DocumentService = Depends(get_film_service)
 ) -> list[FilmBase]:
     """
@@ -88,8 +88,8 @@ async def film_details(
             tags=['Пролистывание документов'])
 async def films(
         sort: str = Query(default=None, max_length=50),
-        pg_size: int = Query(default=50, alias="page[size]"),
-        pg_number: int = Query(default=1, alias="page[number]"),
+        pg_size: conint(strict=True, gt=0) = Query(default=50, alias="page[size]"),
+        pg_number: conint(strict=True, gt=0) = Query(default=1, alias="page[number]"),
         fltr: Union[str, None] = Query(
             default=None,
             alias="filter[genre]"
