@@ -1,15 +1,16 @@
 import logging
 from typing import Optional
 
-from interfaces.search import SearchCursor, SearchRequest
-from core.elastic import AsyncElasticsearch, ElasticSearcher
-from core.redis import Redis, RedisCacher
+from interfaces.search import SearchAPI, SearchCursor, SearchRequest
+from interfaces.cache import CacheAPI
+from core.elastic import ElasticSearcher
+from core.redis import RedisCacher
 
 
 class DocumentService:
     """API Service providing cache-enabled operations in an indexed document database"""
     def __init__(self, index: str, model: object,
-                 redis: Redis, elastic: AsyncElasticsearch):
+                 redis: CacheAPI, elastic: SearchAPI):
         self.index = index
         self.cacher = RedisCacher(index, redis)
         self.searcher = ElasticSearcher(index, elastic)
