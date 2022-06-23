@@ -22,8 +22,8 @@ router: APIRouter = APIRouter()
             tags=['Пролистывание документов'])
 async def get_persons(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[conint(strict=True, gt=0), None] = Query(default=50, alias='page[size]'),
-        page_number: Union[conint(strict=True, gt=0), None] = Query(default=1, alias='page[number]'),
+        page_size: Union[conint(gt=0), None] = Query(default=50, alias='page[size]'),
+        page_number: Union[conint(gt=0), None] = Query(default=1, alias='page[number]'),
         service: DocumentService = Depends(get_person_service)
 ) -> list[Person]:
     """
@@ -50,8 +50,8 @@ async def get_persons(
             tags=['Полнотекстовый поиск'])
 async def search_persons(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[conint(strict=True, gt=0), None] = Query(default=50, alias='page[size]'),
-        page_number: Union[conint(strict=True, gt=0), None] = Query(default=1, alias='page[number]'),
+        page_size: Union[conint(gt=0), None] = Query(default=50, alias='page[size]'),
+        page_number: Union[conint(gt=0), None] = Query(default=1, alias='page[number]'),
         query: Union[str, None] = Query(default='/.*/'),
         service: DocumentService = Depends(get_person_service)
 ) -> list[Person]:

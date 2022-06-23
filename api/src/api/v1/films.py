@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
             tags=['Полнотекстовый поиск'])
 async def search_films(
         query: str,
-        pg_size: conint(strict=True, gt=0) = Query(default=50, alias="page[size]"),
-        pg_number: conint(strict=True, gt=0) = Query(default=1, alias="page[number]"),
+        pg_size: conint(gt=0) = Query(default=50, alias="page[size]"),
+        pg_number: conint(gt=0) = Query(default=1, alias="page[number]"),
         film_service: DocumentService = Depends(get_film_service)
 ) -> list[FilmBase]:
     """
@@ -88,8 +88,8 @@ async def film_details(
             tags=['Пролистывание документов'])
 async def films(
         sort: str = Query(default=None, max_length=50),
-        pg_size: conint(strict=True, gt=0) = Query(default=50, alias="page[size]"),
-        pg_number: conint(strict=True, gt=0) = Query(default=1, alias="page[number]"),
+        pg_size: conint(gt=0) = Query(default=50, alias="page[size]"),
+        pg_number: conint(gt=0) = Query(default=1, alias="page[number]"),
         fltr: Union[str, None] = Query(
             default=None,
             alias="filter[genre]"
