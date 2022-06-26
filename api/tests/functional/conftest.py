@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import Optional, Awaitable, Callable, AsyncGenerator
+from typing import Awaitable, AsyncGenerator, Optional, Callable
 
 import aiohttp
 import aioredis
