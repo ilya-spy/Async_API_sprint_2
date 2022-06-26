@@ -45,7 +45,7 @@ async def fill_es_genre(es_client, get_es_cleaner, get_cache_cleaner) -> AsyncGe
 def get_es_cleaner(es_client) -> Callable[[str], Awaitable[None]]:
     async def clear_es(index: str):
         await es_client.indices.refresh()
-        await es_client.delete_by_query(index=index, body={"query": {"match_all": {}}})
+        await es_client.delete_by_query(index=index, query={"match_all": {}})
 
     return clear_es
 
@@ -68,10 +68,7 @@ def get_cache_cleaner(redis_client) -> Callable[[None], Awaitable[None]]:
 @pytest.fixture(scope="session")
 def get_es_entry_updater(es_client) -> Callable[[str, str, dict[str, str]], Awaitable[None]]:
     async def updater(index: str, doc_id: str, fields: dict[str, str]):
-        req_body = {
-            "doc": fields
-        }
-        await es_client.update(index=index, id=doc_id, body=req_body, refresh=True)
+        await es_client.update(index=index, id=doc_id, doc=fields, refresh=True)
 
     return updater
 
@@ -114,6 +111,7 @@ def request_factory(session) -> Callable[[str, Optional[dict]], Awaitable[HTTPRe
         params = params or {}
         # в боевых системах старайтесь так не делать!
         url = f"{settings.API_SCHEME}://{settings.API_HOST}:{settings.API_PORT}/api/v1/{endpoint}"
+
         async with session.get(url, params=params) as response:
             return HTTPResponse(
                 body=await response.json(),
