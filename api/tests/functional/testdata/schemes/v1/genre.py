@@ -1,8 +1,6 @@
-from uuid import UUID
-
-from testdata.models.model_json import BaseOrJsonModel
+from testdata.models.model import BaseOrJsonModel
 
 
 class Genre(BaseOrJsonModel):
-    uuid: UUID
+    uuid: str
     name: str
