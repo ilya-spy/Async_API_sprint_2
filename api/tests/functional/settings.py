@@ -1,10 +1,11 @@
+
 from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
     API_SCHEME: str = 'http'
     API_HOST: str = '127.0.0.1'
-    API_PORT: int = 8000
+    API_PORT: int = 8001
 
     REDIS_HOST: str = '127.0.0.1'
     REDIS_PORT: int = 6379
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = ''
 
     LOGGING_LEVEL: str = 'INFO'
+    DEBUG: str = 'True'
 
 
 settings = Settings()

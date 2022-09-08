@@ -20,6 +20,7 @@ class FilmErrors:
 
 
 class GenreErrors:
+    NO_SUCH_ID = _create_id_error("genre")
     GENRES_NOT_FOUND = _create_list_error("genres")
     SEARCH_WO_RESULTS = Template(_create_search_error("genres"))
 

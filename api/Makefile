@@ -10,7 +10,7 @@ prep:
 	PYTHONPATH=$(shell pwd)/tests python3 tests/core/wait_for_redis.py
 
 f_test:
-	PYTHONPATH=$(shell pwd)/src:$(shell pwd)/tests; \
+	PYTHONPATH=$(shell pwd)/tests:$(shell pwd)/src; \
 	PATH=/home/web/.local/bin:${PATH}; \
 	pytest tests/functional/src
 

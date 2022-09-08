@@ -1,8 +1,8 @@
 from http import HTTPStatus
 from typing import Union
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import conint
 
 from api.v1.schemes.genre import Genre
 from core.converter import GenreConverter
@@ -21,8 +21,8 @@ router: APIRouter = APIRouter()
             tags=['Пролистывание документов'])
 async def get_genres(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[conint(gt=0), None] = Query(default=50, alias='page[size]'),
-        page_number: Union[conint(gt=0), None] = Query(default=1, alias='page[number]'),
+        page_size: Union[int, None] = Query(default=50, gt=0, alias='page[size]'),
+        page_number: Union[int, None] = Query(default=1, gt=0, alias='page[number]'),
         service: DocumentService = Depends(get_genre_service)
 ) -> list[Genre]:
     """
@@ -49,8 +49,8 @@ async def get_genres(
             tags=['Полнотекстовый поиск'])
 async def search_genres(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[conint(gt=0), None] = Query(default=50, alias='page[size]'),
-        page_number: Union[conint(gt=0), None] = Query(default=1, alias='page[number]'),
+        page_size: Union[int, None] = Query(default=50, gt=0, alias='page[size]'),
+        page_number: Union[int, None] = Query(default=1, gt=0, alias='page[number]'),
         query: Union[str, None] = Query(default='/.*/'),
         service: DocumentService = Depends(get_genre_service)
 ) -> list[Genre]:
@@ -75,3 +75,24 @@ async def search_genres(
             detail=GenreErrors.SEARCH_WO_RESULTS.substitute(query=query)
         )
     return [GenreConverter.convert(gnr) for gnr in result]
+
+
+@router.get('/{genre_id}/', response_model=Genre)
+async def genre_details(
+        genre_id: UUID,
+        _genre_service: DocumentService = Depends(get_genre_service)
+) -> Genre:
+    """
+
+    @param genre_id: genre unique identifier
+    @param _genre_service: genre extractor
+    @return Genre:
+    """
+    genre = await _genre_service.get_single(str(genre_id))
+
+    if not genre:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=GenreErrors.NO_SUCH_ID
+        )
+    return GenreConverter.convert(genre)

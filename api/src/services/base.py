@@ -21,6 +21,7 @@ class DocumentService:
                        sort: Optional[str]) -> list[Optional[object]]:
         """List all documents in the index, with sorting by field"""
         cursor = SearchCursor(page, size, sort)
+        self.logger.info(cursor)
 
         # look in cache upfront
         if cached := await self.cacher.get_vector(repr(cursor)):
@@ -29,12 +30,11 @@ class DocumentService:
             return [self.model(**c) for c in cached]
 
         # search all from elastic and convert
-        resp = await self.searcher.list_index(cursor)
-
+        resp = list(await self.searcher.list_index(cursor))
         converted = [self.model(**entry) 
                      for entry in (resp if resp else [])]
         self.logger.info(
-            f"Fetched and converted {len(converted)} {self.index} elastic docs")
+            f"Fetched and converted {len(converted)} {self.index} elastic docs\n")
 
         # put page to cache
         await self.cacher.put_vector(repr(cursor), converted)
