@@ -1,4 +1,3 @@
-from typing import Callable
 import uuid
 
 import pytest
@@ -34,7 +33,6 @@ async def genres(es_client, es_bulk, backend_cleaner) -> Factory:
     await backend_cleaner(TestGenreIdEp.INDEX)
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("genres")
 class TestGenreIdEp:
@@ -42,7 +40,6 @@ class TestGenreIdEp:
     GENRE_BY_ID = "genres/{}/"
     GENRES_LIST = "genres/"
     GENRES_COUNT = 100
-
 
     async def test_non_existent_id(self, http_requester, genres: Factory):
         """Test makes sure API returns non-existent status accordingly"""
@@ -55,14 +52,12 @@ class TestGenreIdEp:
         response = await http_requester(self.GENRE_BY_ID.format(wrong_id))
         assert response.status == 404
 
-
     @pytest.mark.parametrize("uid, expected_status", [("genre", 422), (123456789, 422)])
     async def test_incorrect_id(self, http_requester, uid, expected_status):
         """Test makes sure API returns wrong arguments status on incorrct genre uuid entries"""
 
         response = await http_requester(self.GENRE_BY_ID.format(uid))
         assert response.status == expected_status
-
 
     @pytest.mark.parametrize("page", [1, 2])
     async def test_page(self, page, http_requester, get_es_updater, genres: Factory):
@@ -76,7 +71,6 @@ class TestGenreIdEp:
             {"page[number]": page}
         )
         await checker.check_response_page(genres.production())
-
 
     @pytest.mark.parametrize("p_size, p_number, result",
                              [(100, 1, 200),
@@ -93,7 +87,7 @@ class TestGenreIdEp:
                               http_requester,
                               get_es_updater,
                               genres: Factory
-                            ):
+                              ):
         """Test checks cached paginated lists in API results"""
         req_params = {"page[size]": p_size, "page[number]": p_number}
         checker = APIChecker(
@@ -106,7 +100,6 @@ class TestGenreIdEp:
         await checker.check_response(result)
         if result == 200:
             await checker.check_cached_page(self.INDEX, genres.production())
-
 
     async def test_default_page(self, http_requester, get_es_updater, genres: Factory):
         """Test checks default page response"""

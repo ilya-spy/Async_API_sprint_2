@@ -44,7 +44,6 @@ class APIChecker:
         assert response.status == 200
         return list(response.body)
 
-
     async def check_response_page(self, entries: Generator[BaseModel, None, None]):
         """Method checks provided API page response against db injected entries"""
 
@@ -52,17 +51,16 @@ class APIChecker:
         entries = list(entries)
 
         # compute page boundaries inside index
-        begin  = (self.page_num - 1) * self.page_size
+        begin = (self.page_num - 1) * self.page_size
         end = begin + len(response) - 1
         middle = len(response) // 2
 
         # check page boundaries
-        assert response[0] ==  self.converter.convert(entries[begin])
-        assert response[-1] ==  self.converter.convert(entries[end])
+        assert response[0] == self.converter.convert(entries[begin])
+        assert response[-1] == self.converter.convert(entries[end])
 
         # check some middle element
-        assert response[middle] ==  self.converter.convert(entries[begin + middle])
-
+        assert response[middle] == self.converter.convert(entries[begin + middle])
 
     async def check_cached_page(self, index: str, entries: Generator[BaseModel, None, None]):
         """Method checks provided API response to be cached (must differ from corrupted)"""
@@ -72,7 +70,7 @@ class APIChecker:
         entries = list(entries)
 
         # locate first element in page to alter
-        begin  = (self.page_num - 1) * self.page_size
+        begin = (self.page_num - 1) * self.page_size
         changed_uuid = self.converter.convert(entries[begin])['uuid']
 
         # corrupt internal id field (do not affect index id)

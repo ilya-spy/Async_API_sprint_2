@@ -1,12 +1,11 @@
 import asyncio
 
 from dataclasses import dataclass
-from typing import Awaitable, AsyncGenerator, Optional, Callable
+from typing import Awaitable, Optional, Callable
 
 import aiohttp
 import aioredis
 import pytest
-import pytest_asyncio
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
@@ -17,6 +16,7 @@ from settings import settings
 @pytest.fixture(scope="session")
 def event_loop():
     return asyncio.get_event_loop()
+
 
 @pytest.fixture(scope="session")
 def es_bulk():

@@ -49,12 +49,10 @@ class Factory:
             self.product.append(item)
         return self.product
 
-
     def actions(self) -> Generator[dict, None, None]:
         """Issues produced models as ES actions list for bulk execution"""
         for one in self.product:
             yield {"_index": self.index, "_id": one['id'], "_source": one}
-
 
     def production(self) -> Generator[dict, None, None]:
         """Issues produced models as sorted raw"""

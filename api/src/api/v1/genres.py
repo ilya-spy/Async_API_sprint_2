@@ -3,7 +3,6 @@ from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import conint
 
 from api.v1.schemes.genre import Genre
 from core.converter import GenreConverter
