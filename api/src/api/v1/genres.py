@@ -5,6 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.v1.schemes.genre import Genre
+from api.v1.params.pagination import PaginationParams
+
 from core.converter import GenreConverter
 from core.errors import GenreErrors
 from services.base import DocumentService
@@ -21,8 +23,7 @@ router: APIRouter = APIRouter()
             tags=['Пролистывание документов'])
 async def get_genres(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[int, None] = Query(default=50, gt=0, alias='page[size]'),
-        page_number: Union[int, None] = Query(default=1, gt=0, alias='page[number]'),
+        pagination: PaginationParams = Depends(PaginationParams),
         service: DocumentService = Depends(get_genre_service)
 ) -> list[Genre]:
     """
@@ -32,7 +33,7 @@ async def get_genres(
     @param page_number: int
     @return list[Genre]:
     """
-    result = await service.list_all(page_number, page_size, sort)
+    result = await service.list_all(pagination.page_number, pagination.page_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
@@ -49,8 +50,7 @@ async def get_genres(
             tags=['Полнотекстовый поиск'])
 async def search_genres(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[int, None] = Query(default=50, gt=0, alias='page[size]'),
-        page_number: Union[int, None] = Query(default=1, gt=0, alias='page[number]'),
+        pagination: PaginationParams = Depends(PaginationParams),
         query: Union[str, None] = Query(default='/.*/'),
         service: DocumentService = Depends(get_genre_service)
 ) -> list[Genre]:
@@ -65,8 +65,8 @@ async def search_genres(
     result = await service.search_by_field(
         path='name',
         query=query,
-        page=page_number,
-        size=page_size,
+        page=pagination.page_number,
+        size=pagination.page_size,
         sort=sort)
 
     if not result:

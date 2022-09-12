@@ -3,9 +3,10 @@ from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import conint
 
 from api.v1.schemes.person import Person
+from api.v1.params.pagination import PaginationParams
+
 from core.converter import PersonConverter
 from core.errors import PersonErrors
 from services.base import DocumentService
@@ -22,8 +23,7 @@ router: APIRouter = APIRouter()
             tags=['Пролистывание документов'])
 async def get_persons(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[conint(gt=0), None] = Query(default=50, alias='page[size]'),
-        page_number: Union[conint(gt=0), None] = Query(default=1, alias='page[number]'),
+        pagination: PaginationParams = Depends(PaginationParams),
         service: DocumentService = Depends(get_person_service)
 ) -> list[Person]:
     """
@@ -33,7 +33,7 @@ async def get_persons(
     @param page_number: int
     @return list[Person]:
     """
-    result = await service.list_all(page_number, page_size, sort)
+    result = await service.list_all(pagination.page_number, pagination.page_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
@@ -50,8 +50,7 @@ async def get_persons(
             tags=['Полнотекстовый поиск'])
 async def search_persons(
         sort: Union[str, None] = Query(default=None, max_length=50),
-        page_size: Union[conint(gt=0), None] = Query(default=50, alias='page[size]'),
-        page_number: Union[conint(gt=0), None] = Query(default=1, alias='page[number]'),
+        pagination: PaginationParams = Depends(PaginationParams),
         query: Union[str, None] = Query(default='/.*/'),
         service: DocumentService = Depends(get_person_service)
 ) -> list[Person]:
@@ -65,8 +64,8 @@ async def search_persons(
     result = await service.search_by_field(
         path='full_name',
         query=query,
-        page=page_number,
-        size=page_size,
+        page=pagination.page_number,
+        size=pagination.page_size,
         sort=sort
     )
     if not result:
@@ -81,7 +80,7 @@ async def search_persons(
             response_model=Person,
             summary="Детали персон",
             description="Получение деталей по персон",
-            response_description="Название и рейтинг персонs, участники, прочее",
+            response_description="Название и рейтинг персон, участники, прочее",
             tags=['Получение документа'])
 async def person_details(person_uuid: UUID, service: DocumentService = Depends(get_person_service)) -> Person:
     person = await service.get_single(str(person_uuid))

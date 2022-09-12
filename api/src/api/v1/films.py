@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import conint
 
 from api.v1.schemes.film import Film, FilmBase
+from api.v1.params.pagination import PaginationParams
+
 from core.converter import FilmBaseConverter, FilmConverter
 from core.errors import FilmErrors
 from services.base import DocumentService
@@ -88,8 +90,7 @@ async def film_details(
             tags=['Пролистывание документов'])
 async def films(
         sort: str = Query(default=None, max_length=50),
-        pg_size: conint(gt=0) = Query(default=50, alias="page[size]"),
-        pg_number: conint(gt=0) = Query(default=1, alias="page[number]"),
+        pagination: PaginationParams = Depends(PaginationParams),
         fltr: Union[str, None] = Query(
             default=None,
             alias="filter[genre]"
@@ -109,12 +110,12 @@ async def films(
         result = await film_service.search_by_field(
             path="genre.name",
             query=str(fltr),
-            page=pg_number,
-            size=pg_size,
+            page=pagination.page_number,
+            size=pagination.page_size,
             sort=sort
         )
     else:
-        result = await film_service.list_all(pg_number, pg_size, sort)
+        result = await film_service.list_all(pagination.page_number, pagination.page_size, sort)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,

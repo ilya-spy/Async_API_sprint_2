@@ -31,23 +31,33 @@ class Factory:
         if type == 'float':
             return self.faker.pyfloat()
         if type == 'array':
+            if '$ref' in field['items']:
+                print('NESTED = ', field)
+                nested_name = field['items']['$ref'].split('/')[-1]
+                nested_schema = self.model.schema()['definitions'][nested_name]
+                print('NESTED SCHEMA= ', nested_schema)
+                return self.produce(nested_schema['properties'], 2)
             if field['items']['type'] == 'string':
                 return self.faker.pylist(2, True, 'str')
             if field['items']['type'] == 'object':
                 return [self.faker.pydict(2, False, 'str') for _ in range(2)]
 
-    def produce(self, count: int) -> list[BaseOrJsonModel]:
+    def produce(self, schema: dict, count: int) -> list[BaseOrJsonModel]:
         """Produces and records a list of requested models"""
-
-        # get pydantic fields names
-        schema = self.model.schema()['properties']
-
+        result = []
         for i in range(count):
             item = {}
             for field in schema.keys():
                 item.update({field: self.make_field(schema[field])})
-            self.product.append(item)
-        return self.product
+            result.append(item)
+        return result
+
+    def inflate(self, count) -> list[BaseOrJsonModel]:
+        """Fills top-level model procudtion"""
+
+        # get top level pydantic fields names
+        schema = self.model.schema()['properties']
+        self.product = self.produce(schema, count)
 
     def actions(self) -> Generator[dict, None, None]:
         """Issues produced models as ES actions list for bulk execution"""

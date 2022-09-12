@@ -5,10 +5,8 @@ from typing import Generator
 
 import aioredis
 from aioredis import Redis
-from aioredis import exceptions as rd_exp
-from functional.logger import logger
 from functional.settings import settings
-from wait_for_base import ConnectChecker
+from wait_for_base import ConnectChecker, backoff
 
 
 @asynccontextmanager
@@ -25,26 +23,15 @@ class RedisChecker(ConnectChecker):
         super().__init__(logging.getLogger("Elastic_Waiting"))
         self.client: Redis = rds
 
-    def __repr__(self):
-        return "Redis cache"
-
+    @backoff("Redis cache")
     async def ping(self) -> bool:
-        logger.info("Pinging redis cacher...")
-        try:
-            await self.client.ping()
-        except (rd_exp.ConnectionError, rd_exp.TimeoutError):
-            pass
-        except Exception:
-            logger.exception("Unexpected exception.")
-        else:
-            return True
-        return False
+        return await self.client.ping()
 
 
 async def wait_for_redis():
     async with get_rds() as rds:
         checker = RedisChecker(rds)
-        await checker.wait()
+        await checker.ping()
 
 
 if __name__ == '__main__':
