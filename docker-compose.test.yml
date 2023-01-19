@@ -1,0 +1,67 @@
+services:
+  api:
+    build:
+      context: api
+    image: api-image
+    depends_on:
+      - elastic
+      - redis
+    environment:
+      - APP_HOST=$API_HOST
+      - APP_PORT=$API_PORT
+      - ELASTIC_SCHEMA
+      - ELASTIC_HOST
+      - ELASTIC_PORT
+      - REDIS_HOST
+      - REDIS_PORT
+    expose:
+      - "$API_PORT"
+    ports:
+      - 127.0.0.1:$API_PORT:$API_PORT
+    volumes:
+      - ./api:/app
+
+  elastic:
+    build:
+      context: elastic
+    environment:
+      - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
+      - 'discovery.type=single-node'
+      - 'xpack.security.enabled=false'
+    volumes:
+      - async-api-search-test:/usr/share/elasticsearch/data
+    expose:
+      - "$ELASTIC_PORT"
+    ports:
+      - 127.0.0.1:$ELASTIC_PORT:$ELASTIC_PORT
+
+  redis:
+    image: redis:7.0.0-alpine
+    volumes:
+      - async-api-cache-test:/data
+    expose:
+      - "$REDIS_PORT"
+    ports:
+      - 127.0.0.1:$REDIS_PORT:$REDIS_PORT
+
+  tests:
+    image: api-image
+    command: [make, test]
+    depends_on:
+      - elastic
+      - redis
+      - api
+    environment:
+      - API_HOST
+      - API_PORT
+      - ELASTIC_SCHEMA
+      - ELASTIC_HOST
+      - ELASTIC_PORT
+      - REDIS_HOST
+      - REDIS_PORT
+    volumes:
+      - ./api:/app
+
+volumes:
+  async-api-search-test:
+  async-api-cache-test:

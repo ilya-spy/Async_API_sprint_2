@@ -1,0 +1,104 @@
+services:
+  api:
+    build:
+      context: api
+    depends_on:
+      - elastic
+      - redis
+    environment:
+      - REDIS_HOST
+      - REDIS_PORT
+      - ELASTIC_SCHEMA
+      - ELASTIC_HOST
+      - ELASTIC_PORT
+      - APP_HOST=$API_HOST
+      - APP_PORT=$API_PORT
+      - DEBUG
+    expose:
+      - "$API_PORT"
+    volumes:
+      - ./api:/app
+
+  indexer:
+    build:
+      context: indexer
+    depends_on:
+      - postgres
+      - elastic
+      - redis
+    environment:
+      - REDIS_HOST
+      - ELASTIC_SCHEMA
+      - ELASTIC_HOST
+      - ELASTIC_PORT
+      - DB_HOST
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - DEBUG
+    volumes:
+      - ./indexer:/app
+
+  admin-panel:
+    image: agorobets/admin-panel:latest
+    environment:
+      - DB_HOST
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - SECRET_KEY
+      - DEBUG
+    volumes:
+      - admin-panel-static:/app/static
+    depends_on:
+      - postgres
+    expose:
+      - "$ADMIN_PORT"
+
+  postgres:
+    image: agorobets/admin-panel-postgres:latest
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - admin-panel-db:/var/lib/postgresql/data/
+    expose:
+      - "$DB_PORT"
+
+  elastic:
+    build:
+      context: elastic
+    environment:
+      - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
+      - 'discovery.type=single-node'
+      - 'xpack.security.enabled=false'
+    volumes:
+      - async-api-search:/usr/share/elasticsearch/data
+    expose:
+      - "$ELASTIC_PORT"
+
+  redis:
+    image: redis:7.0.0-alpine
+    volumes:
+      - async-api-cache:/data
+    expose:
+      - "$REDIS_PORT"
+
+  nginx:
+    image: nginx:1.19.2
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - admin-panel-static:/data/static
+    depends_on:
+      - admin-panel
+      - api
+    ports:
+      - "80:80"
+
+volumes:
+  admin-panel-static:
+  admin-panel-db:
+  async-api-search:
+  async-api-cache:
